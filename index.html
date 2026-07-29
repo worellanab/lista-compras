@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lista</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Lista">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0B0F14">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" href="./icon-180.png">
+<style>
+  :root{
+    --bg:#0B0F14; --surface:#141B23; --surface2:#1B242E;
+    --text:#E6EDF3; --muted:#78848F; --line:#222C36;
+    --accent:#22C55E; --danger:#EF4444;
+    --kb:0px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
+  body{
+    font:400 17px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--text);
+    -webkit-user-select:none;user-select:none;
+  }
+  #app{
+    position:fixed;top:0;left:0;right:0;bottom:var(--kb);
+    display:flex;flex-direction:column;
+    padding-top:env(safe-area-inset-top);
+  }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex;align-items:center;gap:10px;
+    padding:10px 16px 10px;
+    border-bottom:1px solid var(--line);
+    flex:0 0 auto;
+  }
+  header h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-.3px}
+  #count{color:var(--muted);font-size:14px;flex:1}
+  .icon-btn{
+    -webkit-appearance:none;appearance:none;border:0;background:var(--surface2);
+    color:var(--text);width:34px;height:34px;border-radius:10px;
+    font-size:16px;line-height:1;display:grid;place-items:center;
+  }
+  .icon-btn:active{background:#2A3641}
+
+  /* ---------- list ---------- */
+  #scroller{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+  #items{list-style:none;margin:0;padding:4px 0 0}
+
+  .row{position:relative;overflow:hidden;background:var(--bg)}
+  .row .bg{
+    position:absolute;inset:0;background:var(--danger);
+    display:flex;align-items:center;justify-content:flex-end;
+    padding-right:22px;color:#fff;font-size:19px;font-weight:600;
+  }
+  .item{
+    position:relative;background:var(--bg);
+    display:flex;align-items:center;gap:13px;
+    padding:14px 16px;border-bottom:1px solid var(--line);
+    will-change:transform;
+  }
+  .item.snap{transition:transform .18s ease-out}
+  .box{
+    flex:0 0 auto;width:23px;height:23px;border-radius:50%;
+    border:2px solid #3A4652;display:grid;place-items:center;
+    font-size:13px;color:#0B0F14;
+  }
+  .txt{flex:1;min-width:0;word-break:break-word}
+  .done .box{background:var(--accent);border-color:var(--accent)}
+  .done .txt{color:var(--muted);text-decoration:line-through}
+  .flash{animation:flash .9s ease-out}
+  @keyframes flash{0%{background:#1E3A2A}100%{background:var(--bg)}}
+
+  .sep{
+    display:flex;align-items:center;gap:10px;
+    padding:18px 16px 8px;color:var(--muted);font-size:13px;
+    text-transform:uppercase;letter-spacing:.6px;font-weight:600;
+  }
+  .sep::after{content:"";flex:1;height:1px;background:var(--line)}
+  #clear{
+    -webkit-appearance:none;appearance:none;border:0;background:transparent;
+    color:var(--muted);font:inherit;font-size:15px;
+    padding:16px;width:100%;text-align:center;
+  }
+  #clear:active{color:var(--danger)}
+
+  /* zona vacía: tocar aquí abre el teclado */
+  #tapzone{min-height:45vh}
+
+  #empty{padding:70px 26px;text-align:center;color:var(--muted)}
+  #empty .big{font-size:44px;margin-bottom:14px;opacity:.55}
+  #empty .t{font-size:16px;color:#9AA6B1}
+  #empty .s{font-size:14px;margin-top:6px}
+
+  /* ---------- composer ---------- */
+  #composer{
+    flex:0 0 auto;display:flex;gap:10px;align-items:center;
+    padding:9px 12px calc(9px + env(safe-area-inset-bottom));
+    background:var(--surface);border-top:1px solid var(--line);
+  }
+  #entry{
+    flex:1;min-width:0;-webkit-appearance:none;appearance:none;
+    background:var(--surface2);border:1px solid transparent;color:var(--text);
+    border-radius:12px;padding:12px 14px;
+    font:400 17px/1.2 inherit; /* 17px evita el zoom automático de iOS */
+    -webkit-user-select:text;user-select:text;
+  }
+  #entry:focus{outline:0;border-color:#2E3B47}
+  #entry::placeholder{color:#5C6874}
+  #add{
+    -webkit-appearance:none;appearance:none;border:0;
+    background:var(--accent);color:#062B14;
+    width:46px;height:46px;border-radius:12px;
+    font-size:27px;font-weight:400;line-height:1;
+    display:grid;place-items:center;flex:0 0 auto;
+  }
+  #add:active{filter:brightness(.85)}
+  #add[disabled]{background:var(--surface2);color:#4B5560}
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed;left:16px;right:16px;bottom:calc(var(--kb) + 76px + env(safe-area-inset-bottom));
+    background:var(--surface2);border:1px solid var(--line);border-radius:13px;
+    padding:13px 16px;display:flex;align-items:center;gap:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
+    transform:translateY(18px);opacity:0;pointer-events:none;
+    transition:opacity .18s,transform .18s;font-size:15px;
+  }
+  #toast.on{opacity:1;transform:none;pointer-events:auto}
+  #toast .m{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #undo{
+    -webkit-appearance:none;appearance:none;border:0;background:transparent;
+    color:var(--accent);font:600 15px inherit;padding:4px 2px;flex:0 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1>Lista</h1>
+    <span id="count"></span>
+    <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
+  </header>
+
+  <div id="scroller">
+    <ul id="items"></ul>
+    <div id="tapzone"></div>
+  </div>
+
+  <form id="composer" autocomplete="off">
+    <input id="entry" type="text" placeholder="Agregar producto…"
+           enterkeyhint="done" autocapitalize="sentences" autocorrect="off"
+           autocomplete="off" spellcheck="false">
+    <button id="add" type="submit" disabled>+</button>
+  </form>
+</div>
+
+<div id="toast"><span class="m"></span><button id="undo" type="button">Deshacer</button></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var KEY = "lista.v1";
+  var $ = function(s){ return document.querySelector(s); };
+  var items = $("#items"), entry = $("#entry"), addBtn = $("#add"),
+      countEl = $("#count"), scroller = $("#scroller"), toast = $("#toast");
+
+  /* ---------------- datos ---------------- */
+  var data = [];
+  try { data = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){ data = []; }
+  if (!Array.isArray(data)) data = [];
+
+  function save(){
+    try { localStorage.setItem(KEY, JSON.stringify(data)); }
+    catch(e){ alert("No se pudo guardar la lista en este dispositivo."); }
+  }
+  var norm = function(s){
+    return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036F]/g,"").replace(/\s+/g," ").trim();
+  };
+
+  /* ---------------- render ---------------- */
+  var flashId = null;
+
+  function render(){
+    var pend = [], done = [], i;
+    for (i=0;i<data.length;i++) (data[i].d ? done : pend).push(data[i]);
+
+    items.innerHTML = "";
+
+    if (!data.length){
+      var e = document.createElement("div");
+      e.id = "empty";
+      e.innerHTML = '<div class="big">&#128722;</div>'+
+                    '<div class="t">La lista está vacía</div>'+
+                    '<div class="s">Toca la pantalla y escribe</div>';
+      items.appendChild(e);
+    }
+
+    for (i=0;i<pend.length;i++) items.appendChild(rowFor(pend[i]));
+
+    if (done.length){
+      var sep = document.createElement("li");
+      sep.className = "sep";
+      sep.textContent = "En el carrito · " + done.length;
+      items.appendChild(sep);
+      for (i=0;i<done.length;i++) items.appendChild(rowFor(done[i]));
+
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.id = "clear"; b.type = "button";
+      b.textContent = "Limpiar " + done.length + " comprado" + (done.length>1?"s":"");
+      b.addEventListener("click", function(){
+        var quedan = [];
+        for (var k=0;k<data.length;k++) if (!data[k].d) quedan.push(data[k]);
+        data = quedan; save(); render();
+      });
+      li.appendChild(b); items.appendChild(li);
+    }
+
+    countEl.textContent = pend.length ? pend.length + " por comprar" : "";
+    flashId = null;
+  }
+
+  function rowFor(it){
+    var li = document.createElement("li");
+    li.className = "row";
+
+    var bg = document.createElement("div");
+    bg.className = "bg"; bg.textContent = "Borrar";
+
+    var d = document.createElement("div");
+    d.className = "item" + (it.d ? " done" : "") + (it.id === flashId ? " flash" : "");
+    d.dataset.id = it.id;
+
+    var box = document.createElement("div");
+    box.className = "box";
+    box.innerHTML = it.d ? "&#10003;" : "";
+
+    var txt = document.createElement("div");
+    txt.className = "txt";
+    txt.textContent = it.t;
+
+    d.appendChild(box); d.appendChild(txt);
+    li.appendChild(bg); li.appendChild(d);
+    return li;
+  }
+
+  /* ---------------- agregar ---------------- */
+  function add(text){
+    text = text.replace(/\s+/g," ").trim();
+    if (!text) return;
+    var n = norm(text), i;
+
+    for (i=0;i<data.length;i++){
+      if (norm(data[i].t) === n){
+        var it = data.splice(i,1)[0];   // ya existe: lo revive y lo sube
+        it.d = false;
+        data.unshift(it);
+        flashId = it.id;
+        save(); render(); scroller.scrollTop = 0;
+        return;
+      }
+    }
+
+    var nuevo = { id: String(Date.now()) + Math.random().toString(36).slice(2,7), t: text, d: false };
+    data.unshift(nuevo);
+    flashId = nuevo.id;
+    save(); render(); scroller.scrollTop = 0;
+  }
+
+  function commit(){
+    add(entry.value);
+    entry.value = "";
+    addBtn.disabled = true;
+    entry.focus();                // el cursor nunca se va: el teclado sigue arriba
+  }
+
+  $("#composer").addEventListener("submit", function(ev){
+    ev.preventDefault();          // no recarga la página
+    commit();
+  });
+
+  entry.addEventListener("keydown", function(ev){
+    if (ev.key === "Enter" || ev.keyCode === 13){ ev.preventDefault(); commit(); }
+  });
+
+  addBtn.addEventListener("click", function(ev){
+    ev.preventDefault();          // evita el submit doble
+    commit();
+  });
+
+  entry.addEventListener("input", function(){
+    addBtn.disabled = !entry.value.trim();
+  });
+
+  /* ------- tocar cualquier parte = abrir el teclado ------- */
+  document.addEventListener("click", function(ev){
+    if (ev.target.closest("button, input, .item")) return;
+    entry.focus();
+  });
+
+  /* el teclado no se cierra al tocar la lista */
+  items.addEventListener("mousedown", function(ev){
+    if (document.activeElement === entry) ev.preventDefault();
+  });
+
+  /* ---------------- tocar item / swipe para borrar ---------------- */
+  var sx=0, sy=0, node=null, moving=false, lock=null;
+
+  items.addEventListener("touchstart", function(ev){
+    var el = ev.target.closest(".item");
+    if (!el) return;
+    node = el; node.classList.remove("snap");
+    sx = ev.touches[0].clientX; sy = ev.touches[0].clientY;
+    moving = false; lock = null;
+  }, {passive:true});
+
+  items.addEventListener("touchmove", function(ev){
+    if (!node) return;
+    var dx = ev.touches[0].clientX - sx, dy = ev.touches[0].clientY - sy;
+    if (lock === null){
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      lock = (Math.abs(dx) > Math.abs(dy) + 4) ? "x" : "y";
+    }
+    if (lock !== "x") return;
+    moving = true;
+    if (ev.cancelable) ev.preventDefault();       // bloquea el scroll mientras arrastras
+    node.style.transform = "translateX(" + Math.min(0, dx) + "px)";
+  }, {passive:false});
+
+  function endSwipe(ev){
+    if (!node) return;
+    var el = node, dx = 0;
+    if (ev.changedTouches && ev.changedTouches[0]) dx = ev.changedTouches[0].clientX - sx;
+    node = null;
+
+    if (lock === "x" && dx < -95){
+      el.classList.add("snap");
+      el.style.transform = "translateX(-100%)";
+      remove(el.dataset.id);
+      return;
+    }
+    el.classList.add("snap");
+    el.style.transform = "";
+    if (!moving) toggle(el.dataset.id);
+  }
+  items.addEventListener("touchend", endSwipe, {passive:true});
+  items.addEventListener("touchcancel", endSwipe, {passive:true});
+
+  /* clic con mouse (para probar en la computadora) */
+  items.addEventListener("click", function(ev){
+    var el = ev.target.closest(".item");
+    if (el && !("ontouchstart" in window)) toggle(el.dataset.id);
+  });
+
+  function toggle(id){
+    for (var i=0;i<data.length;i++){
+      if (data[i].id === id){ data[i].d = !data[i].d; save(); render(); return; }
+    }
+  }
+
+  /* ---------------- borrar + deshacer ---------------- */
+  var papelera = null, tmr = null;
+
+  function remove(id){
+    for (var i=0;i<data.length;i++){
+      if (data[i].id === id){
+        papelera = { it: data[i], i: i };
+        data.splice(i,1); save();
+        setTimeout(render, 170);
+        showToast('Borrado "' + papelera.it.t + '"');
+        return;
+      }
+    }
+  }
+  function showToast(msg){
+    toast.querySelector(".m").textContent = msg;
+    toast.classList.add("on");
+    clearTimeout(tmr);
+    tmr = setTimeout(function(){ toast.classList.remove("on"); papelera = null; }, 5000);
+  }
+  $("#undo").addEventListener("click", function(){
+    if (papelera){ data.splice(Math.min(papelera.i, data.length), 0, papelera.it); save(); render(); }
+    papelera = null; toast.classList.remove("on"); clearTimeout(tmr);
+  });
+
+  /* ---------------- compartir / respaldo ---------------- */
+  $("#share").addEventListener("click", function(){
+    if (!data.length) return;
+    var txt = data.map(function(it){ return (it.d ? "✓ " : "• ") + it.t; }).join("\n");
+    if (navigator.share) navigator.share({ title:"Lista de compras", text:txt })["catch"](function(){});
+    else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ showToast("Lista copiada"); });
+  });
+
+  /* ---------------- teclado: que nunca tape la lista ---------------- */
+  var vv = window.visualViewport;
+  if (vv){
+    var sync = function(){
+      var kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      document.documentElement.style.setProperty("--kb", kb + "px");
+      if (window.scrollY !== 0) window.scrollTo(0,0);
+    };
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+    sync();
+  }
+  window.addEventListener("scroll", function(){ if (window.scrollY !== 0) window.scrollTo(0,0); });
+
+  render();
+
+  /* ---------------- service worker (offline) ---------------- */
+  if ("serviceWorker" in navigator){
+    window.addEventListener("load", function(){
+      navigator.serviceWorker.register("./sw.js").catch(function(){});
+    });
+  }
+})();
+</script>
+</body>
+</html>
