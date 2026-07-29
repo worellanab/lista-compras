@@ -5,7 +5,7 @@
    - resto de archivos: caché primero (arranque instantáneo).
    Para publicar una versión nueva basta con subir el VERSION de abajo. */
 
-var VERSION = "lista-v2";
+var VERSION = "lista-v3";
 var ASSETS = [
   "./",
   "./index.html",
@@ -16,8 +16,14 @@ var ASSETS = [
 
 self.addEventListener("install", function (e) {
   e.waitUntil(
-    caches.open(VERSION).then(function (c) { return c.addAll(ASSETS); })
-      .then(function () { return self.skipWaiting(); })
+    caches.open(VERSION).then(function (c) {
+      // { cache: "reload" } salta el caché HTTP del navegador. GitHub Pages
+      // manda Cache-Control de 10 minutos: sin esto, una versión nueva podía
+      // instalarse con los archivos viejos todavía guardados.
+      return c.addAll(ASSETS.map(function (u) {
+        return new Request(u, { cache: "reload" });
+      }));
+    }).then(function () { return self.skipWaiting(); })
   );
 });
 
@@ -37,7 +43,10 @@ self.addEventListener("fetch", function (e) {
 
   if (req.mode === "navigate") {
     e.respondWith(
-      fetch(req).then(function (res) {
+      // Se pide por URL y con "no-cache" para obligar a revalidar contra el
+      // servidor: si no, el caché HTTP de GitHub podía devolver la app vieja
+      // hasta 10 minutos después de publicar un cambio.
+      fetch(req.url, { cache: "no-cache", credentials: "same-origin" }).then(function (res) {
         // Solo se guarda una respuesta buena y del propio sitio. Si GitHub
         // devuelve un 404 o un error, NO debe reemplazar la app cacheada:
         // si no, offline quedaría mostrando esa página de error para siempre.
