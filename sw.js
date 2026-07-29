@@ -5,7 +5,7 @@
    - resto de archivos: caché primero (arranque instantáneo).
    Para publicar una versión nueva basta con subir el VERSION de abajo. */
 
-var VERSION = "lista-v1";
+var VERSION = "lista-v2";
 var ASSETS = [
   "./",
   "./index.html",
@@ -38,8 +38,13 @@ self.addEventListener("fetch", function (e) {
   if (req.mode === "navigate") {
     e.respondWith(
       fetch(req).then(function (res) {
-        var copy = res.clone();
-        caches.open(VERSION).then(function (c) { c.put("./index.html", copy); });
+        // Solo se guarda una respuesta buena y del propio sitio. Si GitHub
+        // devuelve un 404 o un error, NO debe reemplazar la app cacheada:
+        // si no, offline quedaría mostrando esa página de error para siempre.
+        if (res && res.ok && res.type === "basic") {
+          var copy = res.clone();
+          caches.open(VERSION).then(function (c) { c.put("./index.html", copy); });
+        }
         return res;
       }).catch(function () {
         return caches.match("./index.html").then(function (r) { return r || caches.match("./"); });
