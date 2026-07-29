@@ -48,8 +48,8 @@
   #tabs{display:flex;gap:4px;flex:1;background:var(--surface2);border-radius:11px;padding:3px}
   .tab{
     -webkit-appearance:none;appearance:none;border:0;background:transparent;
-    color:var(--muted);font:600 15px inherit;letter-spacing:-.2px;
-    flex:1;padding:8px 6px;border-radius:9px;
+    color:var(--muted);font-family:inherit;font-weight:600;font-size:15px;
+    letter-spacing:-.2px;flex:1;padding:8px 6px;border-radius:9px;
   }
   .tab.sel{background:var(--bg);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
   .sub{
@@ -74,20 +74,24 @@
     position:absolute;inset:0;background:var(--danger);
     display:flex;align-items:center;justify-content:flex-end;
     padding-right:22px;color:#fff;font-size:19px;font-weight:600;
+    /* solo existe mientras arrastras: si no, con alturas de píxel partido
+       se asomaba un hilito rojo entre renglón y renglón */
+    opacity:0;
   }
+  .row.swipe .bg{opacity:1}
   .item{
     position:relative;background:var(--bg);
-    display:flex;align-items:center;gap:13px;
-    padding:14px 16px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:11px;
+    padding:10px 16px;border-bottom:1px solid var(--line);
     will-change:transform;
   }
   .item.snap{transition:transform .18s ease-out}
   .box{
-    flex:0 0 auto;width:23px;height:23px;border-radius:50%;
+    flex:0 0 auto;width:20px;height:20px;border-radius:50%;
     border:2px solid #3A4652;display:grid;place-items:center;
-    font-size:13px;color:#0B0F14;
+    font-size:11px;color:#0B0F14;
   }
-  .txt{flex:1;min-width:0;word-break:break-word}
+  .txt{flex:1;min-width:0;word-break:break-word;font-size:15px}
   .done .box{background:var(--accent);border-color:var(--accent)}
   .done .txt{color:var(--muted);text-decoration:line-through}
   .flash{animation:flash .9s ease-out}
@@ -95,7 +99,7 @@
 
   .sep{
     display:flex;align-items:center;gap:10px;
-    padding:18px 16px 8px;color:var(--muted);font-size:13px;
+    padding:15px 16px 7px;color:var(--muted);font-size:12px;
     text-transform:uppercase;letter-spacing:.6px;font-weight:600;
   }
   .sep::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -124,7 +128,10 @@
     flex:1;min-width:0;-webkit-appearance:none;appearance:none;
     background:var(--surface2);border:1px solid transparent;color:var(--text);
     border-radius:12px;padding:12px 14px;
-    font:400 17px/1.2 inherit; /* 17px evita el zoom automático de iOS */
+    /* OJO: en atajo "font:400 17px/1.2 inherit" no vale — inherit no es una
+       familia válida y el navegador descarta TODA la regla, dejando el campo
+       en 13.3px. Y por debajo de 16px iOS hace zoom solo al tocarlo. */
+    font-family:inherit;font-weight:400;font-size:17px;line-height:1.2;
     -webkit-user-select:text;user-select:text;
   }
   #entry:focus{outline:0;border-color:#2E3B47}
@@ -152,7 +159,8 @@
   #toast .m{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #undo{
     -webkit-appearance:none;appearance:none;border:0;background:transparent;
-    color:var(--accent);font:600 15px inherit;padding:4px 2px;flex:0 0 auto;
+    color:var(--accent);font-family:inherit;font-weight:600;font-size:15px;
+    padding:4px 2px;flex:0 0 auto;
   }
 </style>
 </head>
@@ -168,7 +176,7 @@
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <span id="ver">v1.01</span>
+      <span id="ver">v1.02</span>
       <span id="count"></span>
     </div>
   </header>
@@ -427,6 +435,7 @@
     var el = ev.target.closest(".item");
     if (!el) return;
     node = el; node.classList.remove("snap");
+    if (node.parentNode) node.parentNode.classList.add("swipe");
     sx = ev.touches[0].clientX; sy = ev.touches[0].clientY;
     moving = false; lock = null;
   }, {passive:true});
@@ -458,6 +467,7 @@
     }
     el.classList.add("snap");
     el.style.transform = "";
+    if (el.parentNode) el.parentNode.classList.remove("swipe");
     if (!moving) toggle(el.dataset.id);
   }
   items.addEventListener("touchend", endSwipe, {passive:true});
