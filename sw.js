@@ -5,13 +5,13 @@
    - resto de archivos: caché primero (arranque instantáneo).
    Para publicar una versión nueva basta con subir el VERSION de abajo. */
 
-var VERSION = "lista-v3";
+var VERSION = "lista-v1.01";   // que coincida siempre con el #ver de index.html
 var ASSETS = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./icon-180.png",
-  "./icon-512.png"
+  "./icon-cart-180.png",
+  "./icon-cart-512.png"
 ];
 
 self.addEventListener("install", function (e) {

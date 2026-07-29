@@ -11,10 +11,21 @@ en el iPhone desde la pantalla de inicio.
 2. Botón Compartir (el cuadrito con la flecha) → **Añadir a pantalla de inicio**.
 3. Abrirla desde el ícono. Ya no muestra barra de navegador y funciona sin internet.
 
+## Dos pestañas
+
+Arriba hay dos listas que **no se mezclan**, cada una con su propio guardado:
+
+- **Lista** — el super. Se marcan como comprados y van "En el carrito".
+- **Pedidos** — lo que está en camino (Amazon, Temu, etc). Se marcan como recibidos.
+
+Funcionan exactamente igual. La app abre en la pestaña donde la dejaste.
+La versión se muestra debajo de las pestañas.
+
 ## Cómo se usa
 
 | Acción | Gesto |
 |---|---|
+| Cambiar de lista | Tocar "Lista" o "Pedidos" arriba (no cierra el teclado) |
 | Escribir | Tocar cualquier parte de la pantalla → sube el teclado |
 | Agregar | Escribir y darle a Enter. El teclado **no se cierra**: sigues escribiendo |
 | Marcar comprado | Tocar el producto (se tacha y baja al carrito) |
@@ -36,10 +47,16 @@ Como respaldo, el botón ↑ comparte la lista como texto (WhatsApp, Notas, etc.
 - `index.html` — toda la app (HTML + CSS + JS, sin dependencias ni build)
 - `sw.js` — service worker: funciona sin internet
 - `manifest.webmanifest` — nombre, ícono y modo pantalla completa
-- `icon-180.png` / `icon-512.png` — ícono de la pantalla de inicio
+- `icon-cart-180.png` / `icon-cart-512.png` — ícono de carrito para la pantalla de inicio
 
 ## Publicar un cambio
 
 `git push` a `main`. GitHub Pages lo publica solo.
-Si cambias `index.html`, sube también el número de `VERSION` en `sw.js` para que
-el caché viejo se descarte.
+
+Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
+
+- `<span id="ver">v1.01</span>` en `index.html`
+- `var VERSION = "lista-v1.01"` en `sw.js` — si no, queda el caché viejo
+
+Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
+las imágenes por nombre y si no, sigue apareciendo el viejo.

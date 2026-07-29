@@ -6,7 +6,7 @@
 <!-- La app es 100% local: no carga nada de afuera ni manda nada afuera.
      Esta política lo vuelve obligatorio a nivel del navegador. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; manifest-src 'self'; connect-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Lista">
@@ -14,8 +14,8 @@
 <meta name="theme-color" content="#0B0F14">
 <meta name="color-scheme" content="dark">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="icon" href="./icon-180.png">
+<link rel="apple-touch-icon" href="./icon-cart-180.png">
+<link rel="icon" href="./icon-cart-180.png">
 <style>
   :root{
     --bg:#0B0F14; --surface:#141B23; --surface2:#1B242E;
@@ -24,6 +24,9 @@
     --kb:0px;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  /* Pantalla fija: sin doble-tap para acercar, sin pellizco, sin que iOS
+     agrande el texto solo. La app nunca cambia de escala. */
+  html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
   body{
     font:400 17px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -38,13 +41,23 @@
 
   /* ---------- header ---------- */
   header{
-    display:flex;align-items:center;gap:10px;
-    padding:10px 16px 10px;
+    flex:0 0 auto;padding:8px 12px 7px;
     border-bottom:1px solid var(--line);
-    flex:0 0 auto;
   }
-  header h1{font-size:20px;font-weight:700;margin:0;letter-spacing:-.3px}
-  #count{color:var(--muted);font-size:14px;flex:1}
+  .fila{display:flex;align-items:center;gap:8px}
+  #tabs{display:flex;gap:4px;flex:1;background:var(--surface2);border-radius:11px;padding:3px}
+  .tab{
+    -webkit-appearance:none;appearance:none;border:0;background:transparent;
+    color:var(--muted);font:600 15px inherit;letter-spacing:-.2px;
+    flex:1;padding:8px 6px;border-radius:9px;
+  }
+  .tab.sel{background:var(--bg);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .sub{
+    display:flex;align-items:baseline;gap:8px;
+    padding:6px 6px 0;
+  }
+  #ver{color:#4E5A66;font-size:11px;letter-spacing:.4px;flex:0 0 auto}
+  #count{color:var(--muted);font-size:13px;flex:1;text-align:right}
   .icon-btn{
     -webkit-appearance:none;appearance:none;border:0;background:var(--surface2);
     color:var(--text);width:34px;height:34px;border-radius:10px;
@@ -147,9 +160,17 @@
 
 <div id="app">
   <header>
-    <h1>Lista</h1>
-    <span id="count"></span>
-    <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
+    <div class="fila">
+      <div id="tabs">
+        <button class="tab sel" type="button" data-tab="lista">Lista</button>
+        <button class="tab" type="button" data-tab="pedidos">Pedidos</button>
+      </div>
+      <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
+    </div>
+    <div class="sub">
+      <span id="ver">v1.01</span>
+      <span id="count"></span>
+    </div>
   </header>
 
   <div id="scroller">
@@ -171,7 +192,6 @@
 (function(){
   "use strict";
 
-  var KEY = "lista.v1";
   var $ = function(s){ return document.querySelector(s); };
   var items = $("#items"), entry = $("#entry"), addBtn = $("#add"),
       countEl = $("#count"), scroller = $("#scroller"), toast = $("#toast");
@@ -205,13 +225,69 @@
     return limpio;
   }
 
-  var data = [];
-  try { data = sanear(JSON.parse(localStorage.getItem(KEY))); } catch(e){ data = []; }
+  /* ---------------- las dos pestañas ----------------
+     Cada una guarda en su propia llave: nunca se mezclan. */
+  var TABS = {
+    lista: {
+      llave: "lista.v1",
+      titulo: "Lista de compras",
+      campo: "Agregar producto…",
+      icono: "&#128722;",
+      vacio: ["La lista está vacía", "Toca la pantalla y escribe"],
+      cuenta: function(n){ return n + " por comprar"; },
+      hechos: "En el carrito",
+      limpiar: function(n){ return "Limpiar " + n + " comprado" + (n > 1 ? "s" : ""); }
+    },
+    pedidos: {
+      llave: "pedidos.v1",
+      titulo: "Pedidos pendientes",
+      campo: "Agregar pedido…",
+      icono: "&#128230;",
+      vacio: ["No hay pedidos pendientes", "Amazon, Temu, lo que esté en camino"],
+      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); },
+      hechos: "Recibidos",
+      limpiar: function(n){ return "Limpiar " + n + " recibido" + (n > 1 ? "s" : ""); }
+    }
+  };
+  var TAB_KEY = "lista.tab";
+
+  function cargar(llave){
+    try { return sanear(JSON.parse(localStorage.getItem(llave))); } catch(e){ return []; }
+  }
+
+  var listas = { lista: cargar(TABS.lista.llave), pedidos: cargar(TABS.pedidos.llave) };
+  var activa = localStorage.getItem(TAB_KEY) === "pedidos" ? "pedidos" : "lista";
+  var cfg = TABS[activa];
+  var data = listas[activa];
 
   function save(){
-    try { localStorage.setItem(KEY, JSON.stringify(data)); }
-    catch(e){ alert("No se pudo guardar la lista en este dispositivo."); }
+    try { localStorage.setItem(cfg.llave, JSON.stringify(data)); }
+    catch(e){ alert("No se pudo guardar en este dispositivo."); }
   }
+
+  function verPestana(t){
+    if (!TABS[t]) t = "lista";
+    activa = t; cfg = TABS[t]; data = listas[t];
+    try { localStorage.setItem(TAB_KEY, t); } catch(e){}
+    [].forEach.call(document.querySelectorAll(".tab"), function(b){
+      var sel = b.getAttribute("data-tab") === t;
+      b.classList.toggle("sel", sel);
+      b.setAttribute("aria-selected", sel ? "true" : "false");
+    });
+    entry.placeholder = cfg.campo;
+    papelera = null; toast.classList.remove("on"); clearTimeout(tmr);
+    render();
+    scroller.scrollTop = 0;
+  }
+
+  $("#tabs").addEventListener("click", function(ev){
+    var b = ev.target.closest(".tab");
+    if (b) verPestana(b.getAttribute("data-tab"));
+  });
+  /* cambiar de pestaña no cierra el teclado */
+  $("#tabs").addEventListener("mousedown", function(ev){
+    if (document.activeElement === entry) ev.preventDefault();
+  });
   var norm = function(s){
     return String(s == null ? "" : s)
       .toLowerCase().normalize("NFD").replace(/[\u0300-\u036F]/g,"").replace(/\s+/g," ").trim();
@@ -229,9 +305,10 @@
     if (!data.length){
       var e = document.createElement("div");
       e.id = "empty";
-      e.innerHTML = '<div class="big">&#128722;</div>'+
-                    '<div class="t">La lista está vacía</div>'+
-                    '<div class="s">Toca la pantalla y escribe</div>';
+      e.innerHTML = '<div class="big">' + cfg.icono + '</div>' +
+                    '<div class="t"></div><div class="s"></div>';
+      e.querySelector(".t").textContent = cfg.vacio[0];
+      e.querySelector(".s").textContent = cfg.vacio[1];
       items.appendChild(e);
     }
 
@@ -240,23 +317,23 @@
     if (done.length){
       var sep = document.createElement("li");
       sep.className = "sep";
-      sep.textContent = "En el carrito · " + done.length;
+      sep.textContent = cfg.hechos + " · " + done.length;
       items.appendChild(sep);
       for (i=0;i<done.length;i++) items.appendChild(rowFor(done[i]));
 
       var li = document.createElement("li");
       var b = document.createElement("button");
       b.id = "clear"; b.type = "button";
-      b.textContent = "Limpiar " + done.length + " comprado" + (done.length>1?"s":"");
+      b.textContent = cfg.limpiar(done.length);
       b.addEventListener("click", function(){
         var quedan = [];
         for (var k=0;k<data.length;k++) if (!data[k].d) quedan.push(data[k]);
-        data = quedan; save(); render();
+        listas[activa] = quedan; data = quedan; save(); render();
       });
       li.appendChild(b); items.appendChild(li);
     }
 
-    countEl.textContent = pend.length ? pend.length + " por comprar" : "";
+    countEl.textContent = pend.length ? cfg.cuenta(pend.length) : "";
     flashId = null;
   }
 
@@ -427,8 +504,8 @@
   $("#share").addEventListener("click", function(){
     if (!data.length) return;
     var txt = data.map(function(it){ return (it.d ? "✓ " : "• ") + it.t; }).join("\n");
-    if (navigator.share) navigator.share({ title:"Lista de compras", text:txt })["catch"](function(){});
-    else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ showToast("Lista copiada"); });
+    if (navigator.share) navigator.share({ title: cfg.titulo, text: cfg.titulo + "\n" + txt })["catch"](function(){});
+    else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ showToast("Copiado"); });
   });
 
   /* ---------------- teclado: que nunca tape la lista ---------------- */
@@ -445,7 +522,18 @@
   }
   window.addEventListener("scroll", function(){ if (window.scrollY !== 0) window.scrollTo(0,0); });
 
-  render();
+  /* ---------------- pantalla trabada en su escala ----------------
+     Safari en iPhone ignora "user-scalable=no", así que además hay que
+     cancelar el gesto de pellizco a mano. Con esto la pantalla ya no se
+     agranda sola ni queda todo corrido. */
+  ["gesturestart","gesturechange","gestureend"].forEach(function(g){
+    document.addEventListener(g, function(ev){ ev.preventDefault(); }, {passive:false});
+  });
+  /* Ojo: no bloquear el doble toque desde touchend — se comería los toques
+     rápidos seguidos al ir tachando varios productos. Con touch-action
+     "manipulation" ya alcanza. */
+
+  verPestana(activa);
 
   /* ---------------- service worker (offline) ---------------- */
   if ("serviceWorker" in navigator){
