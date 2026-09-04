@@ -11,12 +11,13 @@ en el iPhone desde la pantalla de inicio.
 2. Botón Compartir (el cuadrito con la flecha) → **Añadir a pantalla de inicio**.
 3. Abrirla desde el ícono. Ya no muestra barra de navegador y funciona sin internet.
 
-## Dos pestañas
+## Tres pestañas
 
-Arriba hay dos listas que **no se mezclan**, cada una con su propio guardado:
+Arriba hay tres listas que **no se mezclan**, cada una con su propio guardado:
 
 - **Lista** — el super. Se marcan como comprados y van "En el carrito".
 - **Pedidos** — lo que está en camino (Amazon, Temu, etc). Se marcan como recibidos.
+- **Web** — links o cosas para ver/comprar online. Se marcan como listo.
 
 Funcionan exactamente igual. La app abre en la pestaña donde la dejaste.
 La versión se muestra debajo de las pestañas.
