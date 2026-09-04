@@ -172,11 +172,12 @@
       <div id="tabs">
         <button class="tab sel" type="button" data-tab="lista">Lista</button>
         <button class="tab" type="button" data-tab="pedidos">Pedidos</button>
+        <button class="tab" type="button" data-tab="web">Web</button>
       </div>
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <span id="ver">v1.02</span>
+      <span id="ver">v1.03</span>
       <span id="count"></span>
     </div>
   </header>
@@ -255,6 +256,16 @@
       cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); },
       hechos: "Recibidos",
       limpiar: function(n){ return "Limpiar " + n + " recibido" + (n > 1 ? "s" : ""); }
+    },
+    web: {
+      llave: "web.v1",
+      titulo: "Lista web",
+      campo: "Agregar link o cosa…",
+      icono: "&#127760;",
+      vacio: ["No hay nada guardado", "Toca la pantalla y escribe"],
+      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); },
+      hechos: "Listo",
+      limpiar: function(n){ return "Limpiar " + n + " listo" + (n > 1 ? "s" : ""); }
     }
   };
   var TAB_KEY = "lista.tab";
@@ -263,8 +274,9 @@
     try { return sanear(JSON.parse(localStorage.getItem(llave))); } catch(e){ return []; }
   }
 
-  var listas = { lista: cargar(TABS.lista.llave), pedidos: cargar(TABS.pedidos.llave) };
-  var activa = localStorage.getItem(TAB_KEY) === "pedidos" ? "pedidos" : "lista";
+  var listas = { lista: cargar(TABS.lista.llave), pedidos: cargar(TABS.pedidos.llave), web: cargar(TABS.web.llave) };
+  var tabGuardada = localStorage.getItem(TAB_KEY);
+  var activa = TABS[tabGuardada] ? tabGuardada : "lista";
   var cfg = TABS[activa];
   var data = listas[activa];
 
