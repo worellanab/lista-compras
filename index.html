@@ -86,29 +86,9 @@
     will-change:transform;
   }
   .item.snap{transition:transform .18s ease-out}
-  .box{
-    flex:0 0 auto;width:20px;height:20px;border-radius:50%;
-    border:2px solid #3A4652;display:grid;place-items:center;
-    font-size:11px;color:#0B0F14;
-  }
   .txt{flex:1;min-width:0;word-break:break-word;font-size:15px}
-  .done .box{background:var(--accent);border-color:var(--accent)}
-  .done .txt{color:var(--muted);text-decoration:line-through}
   .flash{animation:flash .9s ease-out}
   @keyframes flash{0%{background:#1E3A2A}100%{background:var(--bg)}}
-
-  .sep{
-    display:flex;align-items:center;gap:10px;
-    padding:15px 16px 7px;color:var(--muted);font-size:12px;
-    text-transform:uppercase;letter-spacing:.6px;font-weight:600;
-  }
-  .sep::after{content:"";flex:1;height:1px;background:var(--line)}
-  #clear{
-    -webkit-appearance:none;appearance:none;border:0;background:transparent;
-    color:var(--muted);font:inherit;font-size:15px;
-    padding:16px;width:100%;text-align:center;
-  }
-  #clear:active{color:var(--danger)}
 
   /* zona vacía: tocar aquí abre el teclado */
   #tapzone{min-height:45vh}
@@ -177,7 +157,7 @@
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <span id="ver">v1.03</span>
+      <span id="ver">v1.04</span>
       <span id="count"></span>
     </div>
   </header>
@@ -229,7 +209,8 @@
       if (!o || typeof o !== "object") continue;
       t = limpiarTexto(o.t);
       if (!t) continue;
-      limpio.push({ id: (typeof o.id === "string" && o.id) ? o.id : nuevoId(), t: t, d: o.d === true });
+      if (o.d === true) continue;      // versión vieja: ya estaba comprado, se descarta
+      limpio.push({ id: (typeof o.id === "string" && o.id) ? o.id : nuevoId(), t: t });
     }
     return limpio;
   }
@@ -243,9 +224,7 @@
       campo: "Agregar producto…",
       icono: "&#128722;",
       vacio: ["La lista está vacía", "Toca la pantalla y escribe"],
-      cuenta: function(n){ return n + " por comprar"; },
-      hechos: "En el carrito",
-      limpiar: function(n){ return "Limpiar " + n + " comprado" + (n > 1 ? "s" : ""); }
+      cuenta: function(n){ return n + " por comprar"; }
     },
     pedidos: {
       llave: "pedidos.v1",
@@ -253,9 +232,7 @@
       campo: "Agregar pedido…",
       icono: "&#128230;",
       vacio: ["No hay pedidos pendientes", "Amazon, Temu, lo que esté en camino"],
-      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); },
-      hechos: "Recibidos",
-      limpiar: function(n){ return "Limpiar " + n + " recibido" + (n > 1 ? "s" : ""); }
+      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); }
     },
     web: {
       llave: "web.v1",
@@ -263,9 +240,7 @@
       campo: "Agregar link o cosa…",
       icono: "&#127760;",
       vacio: ["No hay nada guardado", "Toca la pantalla y escribe"],
-      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); },
-      hechos: "Listo",
-      limpiar: function(n){ return "Limpiar " + n + " listo" + (n > 1 ? "s" : ""); }
+      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); }
     }
   };
   var TAB_KEY = "lista.tab";
@@ -317,9 +292,7 @@
   var flashId = null;
 
   function render(){
-    var pend = [], done = [], i;
-    for (i=0;i<data.length;i++) (data[i].d ? done : pend).push(data[i]);
-
+    var i;
     items.innerHTML = "";
 
     if (!data.length){
@@ -332,28 +305,9 @@
       items.appendChild(e);
     }
 
-    for (i=0;i<pend.length;i++) items.appendChild(rowFor(pend[i]));
+    for (i=0;i<data.length;i++) items.appendChild(rowFor(data[i]));
 
-    if (done.length){
-      var sep = document.createElement("li");
-      sep.className = "sep";
-      sep.textContent = cfg.hechos + " · " + done.length;
-      items.appendChild(sep);
-      for (i=0;i<done.length;i++) items.appendChild(rowFor(done[i]));
-
-      var li = document.createElement("li");
-      var b = document.createElement("button");
-      b.id = "clear"; b.type = "button";
-      b.textContent = cfg.limpiar(done.length);
-      b.addEventListener("click", function(){
-        var quedan = [];
-        for (var k=0;k<data.length;k++) if (!data[k].d) quedan.push(data[k]);
-        listas[activa] = quedan; data = quedan; save(); render();
-      });
-      li.appendChild(b); items.appendChild(li);
-    }
-
-    countEl.textContent = pend.length ? cfg.cuenta(pend.length) : "";
+    countEl.textContent = data.length ? cfg.cuenta(data.length) : "";
     flashId = null;
   }
 
@@ -365,18 +319,14 @@
     bg.className = "bg"; bg.textContent = "Borrar";
 
     var d = document.createElement("div");
-    d.className = "item" + (it.d ? " done" : "") + (it.id === flashId ? " flash" : "");
+    d.className = "item" + (it.id === flashId ? " flash" : "");
     d.dataset.id = it.id;
-
-    var box = document.createElement("div");
-    box.className = "box";
-    box.innerHTML = it.d ? "&#10003;" : "";
 
     var txt = document.createElement("div");
     txt.className = "txt";
     txt.textContent = it.t;
 
-    d.appendChild(box); d.appendChild(txt);
+    d.appendChild(txt);
     li.appendChild(bg); li.appendChild(d);
     return li;
   }
@@ -389,8 +339,7 @@
 
     for (i=0;i<data.length;i++){
       if (norm(data[i].t) === n){
-        var it = data.splice(i,1)[0];   // ya existe: lo revive y lo sube
-        it.d = false;
+        var it = data.splice(i,1)[0];   // ya existe: lo sube al tope
         data.unshift(it);
         flashId = it.id;
         save(); render(); scroller.scrollTop = 0;
@@ -398,7 +347,7 @@
       }
     }
 
-    var nuevo = { id: nuevoId(), t: text, d: false };
+    var nuevo = { id: nuevoId(), t: text };
     data.unshift(nuevo);
     flashId = nuevo.id;
     save(); render(); scroller.scrollTop = 0;
@@ -440,7 +389,10 @@
     if (document.activeElement === entry) ev.preventDefault();
   });
 
-  /* ---------------- tocar item / swipe para borrar ---------------- */
+  /* ---------------- swipe para borrar ----------------
+     Tocar un producto NO hace nada: la única forma de sacarlo de la lista
+     es deslizarlo a la izquierda (con "Deshacer" por 5 segundos). Así un
+     roce accidental no cambia nada. */
   var sx=0, sy=0, node=null, moving=false, lock=null;
 
   items.addEventListener("touchstart", function(ev){
@@ -480,22 +432,9 @@
     el.classList.add("snap");
     el.style.transform = "";
     if (el.parentNode) el.parentNode.classList.remove("swipe");
-    if (!moving) toggle(el.dataset.id);
   }
   items.addEventListener("touchend", endSwipe, {passive:true});
   items.addEventListener("touchcancel", endSwipe, {passive:true});
-
-  /* clic con mouse (para probar en la computadora) */
-  items.addEventListener("click", function(ev){
-    var el = ev.target.closest(".item");
-    if (el && !("ontouchstart" in window)) toggle(el.dataset.id);
-  });
-
-  function toggle(id){
-    for (var i=0;i<data.length;i++){
-      if (data[i].id === id){ data[i].d = !data[i].d; save(); render(); return; }
-    }
-  }
 
   /* ---------------- borrar + deshacer ---------------- */
   var papelera = null, tmr = null;
@@ -525,7 +464,7 @@
   /* ---------------- compartir / respaldo ---------------- */
   $("#share").addEventListener("click", function(){
     if (!data.length) return;
-    var txt = data.map(function(it){ return (it.d ? "✓ " : "• ") + it.t; }).join("\n");
+    var txt = data.map(function(it){ return "• " + it.t; }).join("\n");
     if (navigator.share) navigator.share({ title: cfg.titulo, text: cfg.titulo + "\n" + txt })["catch"](function(){});
     else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ showToast("Copiado"); });
   });
@@ -551,8 +490,8 @@
   ["gesturestart","gesturechange","gestureend"].forEach(function(g){
     document.addEventListener(g, function(ev){ ev.preventDefault(); }, {passive:false});
   });
-  /* Ojo: no bloquear el doble toque desde touchend — se comería los toques
-     rápidos seguidos al ir tachando varios productos. Con touch-action
+  /* Ojo: no bloquear el doble toque desde touchend — se comería los gestos
+     rápidos seguidos al ir borrando varios productos. Con touch-action
      "manipulation" ya alcanza. */
 
   verPestana(activa);
