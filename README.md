@@ -15,9 +15,9 @@ en el iPhone desde la pantalla de inicio.
 
 Arriba hay tres listas que **no se mezclan**, cada una con su propio guardado:
 
-- **Lista** — el super. Se marcan como comprados y van "En el carrito".
-- **Pedidos** — lo que está en camino (Amazon, Temu, etc). Se marcan como recibidos.
-- **Web** — links o cosas para ver/comprar online. Se marcan como listo.
+- **Lista** — el super. Lo que ya compraste se desliza y se borra.
+- **Pedidos** — lo que está en camino (Amazon, Temu, etc). Al recibirlo, se desliza y se borra.
+- **Web** — links o cosas para ver/comprar online. Cuando está listo, se desliza y se borra.
 
 Funcionan exactamente igual. La app abre en la pestaña donde la dejaste.
 La versión se muestra debajo de las pestañas.
@@ -29,13 +29,11 @@ La versión se muestra debajo de las pestañas.
 | Cambiar de lista | Tocar "Lista" o "Pedidos" arriba (no cierra el teclado) |
 | Escribir | Tocar cualquier parte de la pantalla → sube el teclado |
 | Agregar | Escribir y darle a Enter. El teclado **no se cierra**: sigues escribiendo |
-| Marcar comprado | Tocar el producto (se tacha y baja al carrito) |
-| Borrar | Deslizar el producto hacia la izquierda (con "Deshacer" por 5 segundos) |
+| Comprado / borrar | Deslizar el producto hacia la izquierda (con "Deshacer" por 5 segundos). **Tocar un producto no hace nada**: un roce accidental no cambia la lista |
 | Ver la lista completa | Botón "listo" del teclado o deslizar la lista |
 | Compartir / respaldar | Flecha ↑ arriba a la derecha |
 
 Si agregas un producto que ya está en la lista, no se duplica: se resalta y sube al tope.
-Si ya estaba comprado, vuelve a la lista de pendientes.
 
 ## Dónde viven los datos
 
@@ -56,8 +54,8 @@ Como respaldo, el botón ↑ comparte la lista como texto (WhatsApp, Notas, etc.
 
 Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
 
-- `<span id="ver">v1.01</span>` en `index.html`
-- `var VERSION = "lista-v1.01"` en `sw.js` — si no, queda el caché viejo
+- `<span id="ver">v1.04</span>` en `index.html`
+- `var VERSION = "lista-v1.04"` en `sw.js` — si no, queda el caché viejo
 
 Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
 las imágenes por nombre y si no, sigue apareciendo el viejo.
