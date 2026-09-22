@@ -26,7 +26,7 @@ La versión se muestra debajo de las pestañas.
 
 | Acción | Gesto |
 |---|---|
-| Cambiar de lista | Tocar "Lista" o "Pedidos" arriba (no cierra el teclado) |
+| Cambiar de lista | Tocar "Wong", "Amazon" o "Misc" arriba (no cierra el teclado) |
 | Escribir | Tocar cualquier parte de la pantalla → sube el teclado |
 | Agregar | Escribir y darle a Enter. El teclado **no se cierra**: sigues escribiendo |
 | Marcar (ya lo tengo) | Deslizar el producto hacia la izquierda: queda **tachado y apagado**, pero sigue en la lista |
