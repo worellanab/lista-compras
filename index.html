@@ -5,7 +5,9 @@
 <title>Lista</title>
 <!-- La app es 100% local: no carga nada de afuera ni manda nada afuera.
      Esta política lo vuelve obligatorio a nivel del navegador. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; manifest-src 'self'; connect-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<!-- La app no carga nada de afuera. La única salida permitida es la base de
+     datos de la sincronización (Firebase), y solo si está configurada. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; manifest-src 'self'; connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -168,7 +170,7 @@
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <span id="ver">v1.05</span>
+      <span id="ver">v1.06</span>
       <span id="count"></span>
     </div>
   </header>
@@ -212,6 +214,8 @@
     return String(Date.now()) + Math.random().toString(36).slice(2,7);
   }
 
+  function sanearNum(v){ return (typeof v === "number" && isFinite(v)) ? v : null; }
+
   function sanear(bruto){
     if (!Array.isArray(bruto)) return [];
     var limpio = [], i, o, t;
@@ -231,6 +235,7 @@
   var TABS = {
     lista: {
       llave: "lista.v1",
+      llave2: "lista.v2",
       titulo: "Lista de compras",
       campo: "Agregar producto…",
       icono: "&#128722;",
@@ -239,6 +244,7 @@
     },
     pedidos: {
       llave: "pedidos.v1",
+      llave2: "pedidos.v2",
       titulo: "Pedidos pendientes",
       campo: "Agregar pedido…",
       icono: "&#128230;",
@@ -247,6 +253,7 @@
     },
     web: {
       llave: "web.v1",
+      llave2: "web.v2",
       titulo: "Lista web",
       campo: "Agregar link o cosa…",
       icono: "&#127760;",
@@ -260,20 +267,65 @@
     try { return sanear(JSON.parse(localStorage.getItem(llave))); } catch(e){ return []; }
   }
 
-  var listas = { lista: cargar(TABS.lista.llave), pedidos: cargar(TABS.pedidos.llave), web: cargar(TABS.web.llave) };
+  /* v2: cada producto lleva ts (fecha del último cambio) y pos (su lugar en
+     la lista), y cada pestaña guarda lápidas (del) de lo borrado. Con eso
+     dos teléfonos pueden ponerse de acuerdo: por producto gana el cambio
+     más reciente, y un borrado no "renace" en el otro lado. */
+  function sanearItemsV2(bruto){
+    if (!Array.isArray(bruto)) return [];
+    var out = [], i, o, t;
+    for (i = 0; i < bruto.length && out.length < 2000; i++){
+      o = bruto[i];
+      if (!o || typeof o !== "object") continue;
+      t = limpiarTexto(o.t);
+      if (!t) continue;
+      out.push({
+        id: (typeof o.id === "string" && o.id) ? o.id : nuevoId(),
+        t: t,
+        ts: sanearNum(o.ts) === null ? Date.now() : o.ts,
+        pos: sanearNum(o.pos) === null ? out.length : o.pos
+      });
+    }
+    return out;
+  }
+  function sanearDel(bruto){
+    var out = {}, id, n = 0;
+    if (!bruto || typeof bruto !== "object" || Array.isArray(bruto)) return out;
+    for (id in bruto){
+      if (n >= 4000) break;
+      if (sanearNum(bruto[id]) !== null){ out[id] = bruto[id]; n++; }
+    }
+    return out;
+  }
+  function cargarTab(c){
+    var v2 = null;
+    try { v2 = JSON.parse(localStorage.getItem(c.llave2)); } catch(e){}
+    if (v2 && typeof v2 === "object" && !Array.isArray(v2)){
+      return { items: sanearItemsV2(v2.items), del: sanearDel(v2.del) };
+    }
+    var viejo = cargar(c.llave), items = [], i, ahora = Date.now();   // migración desde v1
+    for (i = 0; i < viejo.length; i++) items.push({ id: viejo[i].id, t: viejo[i].t, ts: ahora, pos: i });
+    return { items: items, del: {} };
+  }
+
+  var listas = { lista: cargarTab(TABS.lista), pedidos: cargarTab(TABS.pedidos), web: cargarTab(TABS.web) };
   var tabGuardada = localStorage.getItem(TAB_KEY);
   var activa = TABS[tabGuardada] ? tabGuardada : "lista";
   var cfg = TABS[activa];
-  var data = listas[activa];
+  var data = listas[activa].items, delMap = listas[activa].del;
 
-  function save(){
-    try { localStorage.setItem(cfg.llave, JSON.stringify(data)); }
+  function guardarTab(t){
+    try { localStorage.setItem(TABS[t].llave2, JSON.stringify(listas[t])); }
     catch(e){ alert("No se pudo guardar en este dispositivo."); }
+  }
+  function save(){
+    guardarTab(activa);
+    pedirSync();
   }
 
   function verPestana(t){
     if (!TABS[t]) t = "lista";
-    activa = t; cfg = TABS[t]; data = listas[t];
+    activa = t; cfg = TABS[t]; data = listas[t].items; delMap = listas[t].del;
     try { localStorage.setItem(TAB_KEY, t); } catch(e){}
     [].forEach.call(document.querySelectorAll(".tab"), function(b){
       var sel = b.getAttribute("data-tab") === t;
@@ -284,6 +336,7 @@
     papelera = null; toast.classList.remove("on"); clearTimeout(tmr);
     render();
     scroller.scrollTop = 0;
+    abrirStream();               // el stream en vivo sigue a la pestaña activa
   }
 
   $("#tabs").addEventListener("click", function(ev){
@@ -343,6 +396,23 @@
   }
 
   /* ---------------- agregar ---------------- */
+  function posTope(){
+    var m = 0, i;
+    for (i = 0; i < data.length; i++) if (data[i].pos < m) m = data[i].pos;
+    return m - 1;
+  }
+  function posEntre(a, b){
+    if (!a && !b) return 0;
+    if (!a) return b.pos - 1;
+    if (!b) return a.pos + 1;
+    var m = (a.pos + b.pos) / 2;
+    return (m > a.pos && m < b.pos) ? m : null;   // sin hueco entre vecinos
+  }
+  function renumerar(){
+    var ahora = Date.now(), i;
+    for (i = 0; i < data.length; i++){ data[i].pos = i; data[i].ts = ahora; }
+  }
+
   function add(text){
     text = limpiarTexto(text);
     if (!text) return;
@@ -351,6 +421,7 @@
     for (i=0;i<data.length;i++){
       if (norm(data[i].t) === n){
         var it = data.splice(i,1)[0];   // ya existe: lo sube al tope
+        it.pos = posTope(); it.ts = Date.now();
         data.unshift(it);
         flashId = it.id;
         save(); render(); scroller.scrollTop = 0;
@@ -358,7 +429,7 @@
       }
     }
 
-    var nuevo = { id: nuevoId(), t: text };
+    var nuevo = { id: nuevoId(), t: text, ts: Date.now(), pos: posTope() };
     data.unshift(nuevo);
     flashId = nuevo.id;
     save(); render(); scroller.scrollTop = 0;
@@ -391,7 +462,7 @@
 
   /* ------- tocar cualquier parte = abrir el teclado ------- */
   document.addEventListener("click", function(ev){
-    if (ev.target.closest("button, input, .item")) return;
+    if (ev.target.closest("button, input, .item, #ver")) return;
     entry.focus();
   });
 
@@ -527,6 +598,8 @@
 
     /* el DOM ya quedó en el orden final: se copia a los datos y se guarda */
     var mapa = {}, orden = [], filas = items.querySelectorAll(".item"), i, o;
+    var movido = li.querySelector(".item");
+    movido = movido ? movido.dataset.id : null;
     for (i=0;i<data.length;i++) mapa[data[i].id] = data[i];
     for (i=0;i<filas.length;i++){
       o = mapa[filas[i].dataset.id];
@@ -534,6 +607,14 @@
     }
     if (orden.length === data.length){
       for (i=0;i<data.length;i++) data[i] = orden[i];
+      for (i=0;i<data.length;i++){
+        if (data[i].id === movido){    // solo el movido cambia de pos (y de ts)
+          var p = posEntre(data[i-1], data[i+1]);
+          if (p === null) renumerar();
+          else { data[i].pos = p; data[i].ts = Date.now(); }
+          break;
+        }
+      }
       save();
     }
   }
@@ -545,6 +626,7 @@
     for (var i=0;i<data.length;i++){
       if (data[i].id === id){
         papelera = { it: data[i], i: i };
+        delMap[id] = Date.now();        // lápida: que no renazca en el otro teléfono
         data.splice(i,1); save();
         setTimeout(render, 170);
         showToast('Borrado "' + papelera.it.t + '"');
@@ -559,8 +641,195 @@
     tmr = setTimeout(function(){ toast.classList.remove("on"); papelera = null; }, 5000);
   }
   $("#undo").addEventListener("click", function(){
-    if (papelera){ data.splice(Math.min(papelera.i, data.length), 0, papelera.it); save(); render(); }
+    if (papelera){
+      var it = papelera.it, k = Math.min(papelera.i, data.length);
+      data.splice(k, 0, it);
+      var p = posEntre(data[k-1], data[k+1]);
+      if (p === null) renumerar(); else it.pos = p;
+      it.ts = Date.now();                // más nuevo que la lápida: revive
+      delete delMap[it.id];
+      save(); render();
+    }
     papelera = null; toast.classList.remove("on"); clearTimeout(tmr);
+  });
+
+  /* ---------------- sincronización entre teléfonos (opcional) ----------------
+     Solo se activa si abajo hay una URL de Firebase. La lista vive en el
+     servidor bajo un código aleatorio largo: quien no lo tenga no puede
+     leerla ni adivinarla. Cada teléfono baja lo del servidor, lo empareja
+     con lo suyo (por producto gana el ts más nuevo, los borrados dejan
+     lápida) y sube solo la diferencia. Sin internet todo sigue local y se
+     empareja al reconectar. Tocar la versión muestra el código de la lista
+     y permite unirse a la de otro teléfono. */
+  var SYNC_URL = "";               // ← pegar aquí la URL de Realtime Database
+  try { SYNC_URL = localStorage.getItem("sync.url") || SYNC_URL; } catch(e){}   // solo para pruebas
+  SYNC_URL = String(SYNC_URL || "").replace(/\/+$/, "");
+  if (!/^https?:\/\//.test(SYNC_URL)) SYNC_URL = "";
+
+  var CODE_KEY = "sync.code", codigo = "";
+
+  function codigoValido(v){ return /^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/.test(v); }
+  function nuevoCodigo(){
+    var abc = "abcdefghjkmnpqrstuvwxyz23456789", s = "", i;
+    var buf = new Uint8Array(12);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(buf);
+    else for (i = 0; i < 12; i++) buf[i] = Math.floor(Math.random() * 256);
+    for (i = 0; i < 12; i++) s += abc[buf[i] % abc.length];
+    return s.slice(0,4) + "-" + s.slice(4,8) + "-" + s.slice(8);
+  }
+  if (SYNC_URL){
+    try { codigo = localStorage.getItem(CODE_KEY) || ""; } catch(e){}
+    if (!codigoValido(codigo)){
+      codigo = nuevoCodigo();
+      try { localStorage.setItem(CODE_KEY, codigo); } catch(e){}
+    }
+  }
+
+  function urlTab(t){ return SYNC_URL + "/listas/" + codigo + "/" + t + ".json"; }
+
+  /* empareja una pestaña con lo remoto; devuelve lo que falta subir (o null) */
+  function mergeTab(t, remoto){
+    var L = listas[t], i, id;
+    var rem = (remoto && typeof remoto === "object") ? remoto : {};
+    var rItems = (rem.items && typeof rem.items === "object" && !Array.isArray(rem.items)) ? rem.items : {};
+    var rDel = sanearDel(rem.del);
+    var loc = {}, subir = {}, cambioLocal = false;
+
+    for (i = 0; i < L.items.length; i++) loc[L.items[i].id] = L.items[i];
+
+    /* items: por id gana el ts más nuevo */
+    var ids = {}, res = {};
+    for (id in loc) ids[id] = 1;
+    for (id in rItems) ids[id] = 1;
+    for (id in ids){
+      var a = loc[id] || null, b = null, rb = rItems[id];
+      if (rb && typeof rb === "object"){
+        var tt = limpiarTexto(rb.t), ts = sanearNum(rb.ts), pos = sanearNum(rb.pos);
+        if (tt && ts !== null) b = { id: id, t: tt, ts: ts, pos: pos === null ? 0 : pos };
+      }
+      var gana = !a ? b : (!b ? a : (b.ts > a.ts ? b : a));
+      if (!gana) continue;
+      res[id] = gana;
+      if (gana === a && (!b || b.ts < a.ts)) subir["items/" + id] = { t: a.t, ts: a.ts, pos: a.pos };
+      else if (gana === b) cambioLocal = true;
+    }
+
+    /* lápidas: también gana la más nueva */
+    var del = {};
+    for (id in L.del) del[id] = L.del[id];
+    for (id in rDel){
+      if (!(id in del) || rDel[id] > del[id]){ del[id] = rDel[id]; cambioLocal = true; }
+    }
+    for (id in L.del){
+      if (!(id in rDel) || L.del[id] > rDel[id]) subir["del/" + id] = L.del[id];
+    }
+
+    /* lápida contra producto: si la lápida es más nueva, sigue borrado */
+    var vivos = [];
+    for (id in res){
+      if (id in del){
+        if (del[id] >= res[id].ts){ if (loc[id]) cambioLocal = true; continue; }
+        delete del[id];                  // el producto renació: la lápida sobra
+        if (("del/" + id) in subir) delete subir["del/" + id];
+        if (id in rDel) subir["del/" + id] = null;
+      }
+      vivos.push(res[id]);
+    }
+    /* lápidas de más de 30 días: ya cumplieron, se limpian de los dos lados */
+    var VIEJA = Date.now() - 30 * 24 * 3600 * 1000;
+    for (id in del){
+      if (del[id] < VIEJA){
+        delete del[id];
+        if (("del/" + id) in subir) delete subir["del/" + id];
+        if (id in rDel) subir["del/" + id] = null;
+        if (id in rItems) subir["items/" + id] = null;
+      }
+    }
+
+    vivos.sort(function(x, y){ return (x.pos - y.pos) || (y.ts - x.ts) || (x.id < y.id ? -1 : 1); });
+    L.items.length = 0;
+    for (i = 0; i < vivos.length; i++) L.items.push(vivos[i]);
+    for (id in L.del) delete L.del[id];
+    for (id in del) L.del[id] = del[id];
+    guardarTab(t);
+    if (cambioLocal && t === activa) render();
+    for (id in subir) return subir;
+    return null;
+  }
+
+  var syncTmr = null, subiendo = false;
+
+  function syncTab(t, cb){
+    fetch(urlTab(t)).then(function(r){
+      if (!r.ok) throw 0;
+      return r.json();
+    }).then(function(remoto){
+      var subir = mergeTab(t, remoto);
+      if (subir) return fetch(urlTab(t), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(subir)
+      });
+    }).then(function(){ cb(); })["catch"](function(){ cb(); });
+  }
+
+  function syncAll(){
+    if (!SYNC_URL) return;
+    if (subiendo || dragging){ pedirSync(); return; }   // ocupado: se reintenta solo
+    subiendo = true;
+    var falta = 3;
+    ["lista","pedidos","web"].forEach(function(t){
+      syncTab(t, function(){ if (--falta === 0) subiendo = false; });
+    });
+  }
+
+  function pedirSync(){
+    if (!SYNC_URL) return;
+    clearTimeout(syncTmr);
+    syncTmr = setTimeout(syncAll, 500);
+  }
+
+  /* stream en vivo: Firebase avisa cuando el otro teléfono cambia algo */
+  var es = null, esTab = "", esEspera = 1000, esTmr = null;
+
+  function abrirStream(){
+    if (!SYNC_URL || !window.EventSource) return;
+    if (es && esTab === activa) return;
+    cerrarStream();
+    esTab = activa;
+    try { es = new EventSource(urlTab(activa)); } catch(e){ es = null; esTab = ""; return; }
+    var avisa = function(){ esEspera = 1000; pedirSync(); };
+    es.addEventListener("put", avisa);
+    es.addEventListener("patch", avisa);
+    es.onerror = function(){                 // sin internet: reintenta con calma
+      cerrarStream();
+      clearTimeout(esTmr);
+      esTmr = setTimeout(abrirStream, esEspera);
+      esEspera = Math.min(esEspera * 2, 60000);
+    };
+  }
+  function cerrarStream(){
+    if (es){ try { es.close(); } catch(e){} es = null; esTab = ""; }
+  }
+
+  /* tocar la versión: ver el código de esta lista o unirse a otra */
+  $("#ver").addEventListener("click", function(){
+    if (!SYNC_URL) return;
+    var v = prompt(
+      "Sincronización entre teléfonos\n\n" +
+      "El código de ESTA lista es:\n\n      " + codigo + "\n\n" +
+      "En el otro teléfono, toca la versión y escribe ese código.\n" +
+      "Para unirte tú a otra lista, escribe aquí su código:", ""
+    );
+    if (v == null) return;
+    v = v.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    if (!v) return;
+    if (!codigoValido(v)){ alert("Ese código no se ve bien.\nFormato: xxxx-xxxx-xxxx"); return; }
+    if (v === codigo) return;
+    codigo = v;
+    try { localStorage.setItem(CODE_KEY, codigo); } catch(e){}
+    cerrarStream(); abrirStream(); pedirSync();
+    showToast("Unido a la lista " + codigo);
   });
 
   /* ---------------- compartir / respaldo ---------------- */
@@ -597,6 +866,15 @@
      "manipulation" ya alcanza. */
 
   verPestana(activa);
+
+  if (SYNC_URL){
+    window.addEventListener("online", pedirSync);
+    document.addEventListener("visibilitychange", function(){
+      if (document.hidden) cerrarStream();
+      else { abrirStream(); pedirSync(); }   // al volver a la app, se empareja
+    });
+    pedirSync();
+  }
 
   /* ---------------- service worker (offline) ---------------- */
   if ("serviceWorker" in navigator){

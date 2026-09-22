@@ -38,9 +38,43 @@ Si agregas un producto que ya está en la lista, no se duplica: se resalta y sub
 
 ## Dónde viven los datos
 
-En el propio iPhone (`localStorage`). **No hay servidor, no hay cuenta, no hay nube.**
-Nada de la lista se sube a GitHub — este repo solo tiene el código.
-Como respaldo, el botón ↑ comparte la lista como texto (WhatsApp, Notas, etc.).
+En el propio iPhone (`localStorage`). Nada de la lista se sube a GitHub — este
+repo solo tiene el código. Como respaldo, el botón ↑ comparte la lista como
+texto (WhatsApp, Notas, etc.).
+
+Si la sincronización está configurada (abajo), la lista además vive en una
+base de datos de Firebase para poder compartirse entre teléfonos.
+
+## Sincronizar entre teléfonos (opcional)
+
+Solo funciona si en `index.html` está pegada la URL de una base **Realtime
+Database** de Firebase (`var SYNC_URL = "…"`). Sin URL, la app es 100% local
+como siempre.
+
+- Cada lista vive bajo un **código** aleatorio (`xxxx-xxxx-xxxx`). Tocar la
+  versión (v1.06) lo muestra; en el otro teléfono se toca la versión y se
+  teclea ese código una sola vez. Desde ahí, los dos ven la misma lista.
+- Quien no tenga el código no puede leer ni adivinar la lista.
+- Sin internet todo sigue funcionando local; al reconectar se emparejan.
+  Por producto gana el cambio más reciente, y los borrados dejan "lápida"
+  30 días para no renacer en el otro teléfono.
+- Las tres pestañas se sincronizan por separado, como siempre.
+
+Cómo se creó la base (una vez): console.firebase.google.com → crear proyecto
+(sin Analytics) → Realtime Database → crear → pestaña Reglas:
+
+```json
+{
+  "rules": {
+    "listas": {
+      "$codigo": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}
+```
 
 ## Archivos
 
@@ -55,8 +89,8 @@ Como respaldo, el botón ↑ comparte la lista como texto (WhatsApp, Notas, etc.
 
 Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
 
-- `<span id="ver">v1.05</span>` en `index.html`
-- `var VERSION = "lista-v1.05"` en `sw.js` — si no, queda el caché viejo
+- `<span id="ver">v1.06</span>` en `index.html`
+- `var VERSION = "lista-v1.06"` en `sw.js` — si no, queda el caché viejo
 
 Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
 las imágenes por nombre y si no, sigue apareciendo el viejo.
