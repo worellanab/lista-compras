@@ -112,7 +112,11 @@
     box-shadow:0 8px 24px rgba(0,0,0,.55);
     transform:scale(1.02);
   }
+  /* Los productos se VEN en mayúsculas, pero se guardan tal como se
+     escribieron: es solo presentación, el texto de abajo no se toca.
+     El espaciado extra es porque en mayúsculas las letras se apelmazan. */
   .txt{flex:1;min-width:0;word-break:break-word;font-size:0.9375rem;
+    text-transform:uppercase;letter-spacing:.3px;
     transition:opacity .2s ease-out}
   /* ya está en el carrito: tachado y apagado, pero sigue en la lista */
   .item.done .txt{text-decoration:line-through;opacity:.4}
@@ -142,10 +146,11 @@
        en 13.3px. Y por debajo de 16px iOS hace zoom solo al tocarlo. */
     /* el max() es a propósito: por debajo de 16px reales iOS hace zoom al tocarlo */
     font-family:inherit;font-weight:400;font-size:max(16px, 1.0625rem);line-height:1.2;
+    text-transform:uppercase;letter-spacing:.3px;
     -webkit-user-select:text;user-select:text;
   }
   #entry:focus{outline:0;border-color:#2E3B47}
-  #entry::placeholder{color:#5C6874}
+  #entry::placeholder{color:#5C6874;text-transform:none;letter-spacing:0}
   #add{
     -webkit-appearance:none;appearance:none;border:0;
     background:var(--accent);color:#062B14;
@@ -253,7 +258,7 @@
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <button id="ver" type="button">v1.08 &nbsp;aA</button>
+      <button id="ver" type="button">v1.09 &nbsp;aA</button>
       <span id="count"></span>
     </div>
   </header>
@@ -797,7 +802,7 @@
         delMap[id] = Date.now();        // lápida: que no renazca en el otro teléfono
         data.splice(i,1); save();
         setTimeout(render, 170);
-        showToast('Borrado "' + papelera.it.t + '"');
+        showToast('Borrado "' + papelera.it.t.toUpperCase() + '"');
         return;
       }
     }
@@ -1032,7 +1037,9 @@
   /* ---------------- compartir / respaldo ---------------- */
   $("#share").addEventListener("click", function(){
     if (!data.length) return;
-    var txt = data.map(function(it){ return (it.c ? "✓ " : "• ") + it.t; }).join("\n");
+    var txt = data.map(function(it){
+      return (it.c ? "✓ " : "• ") + it.t.toUpperCase();   // igual que se ve en la app
+    }).join("\n");
     if (navigator.share) navigator.share({ title: cfg.titulo, text: cfg.titulo + "\n" + txt })["catch"](function(){});
     else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ showToast("Copiado"); });
   });

@@ -35,16 +35,22 @@ La versión se muestra debajo de las pestañas.
 | Ordenar | Dejar presionado un producto (medio segundo, sin mover el dedo) y arrastrarlo arriba o abajo. Al soltar, el orden queda guardado |
 | Ver la lista completa | Botón "listo" del teclado o deslizar la lista |
 | Compartir / respaldar | Flecha ↑ arriba a la derecha |
-| Ajustes (tamaño y código) | Tocar **v1.08 aA** debajo de las pestañas |
+| Ajustes (tamaño y código) | Tocar **v1.09 aA** debajo de las pestañas |
 
 Si agregas un producto que ya está en la lista, no se duplica: se resalta, sube al
 tope y, si estaba tachado, vuelve a quedar pendiente.
 
 El contador de arriba lleva las dos cuentas: lo que falta y lo que ya está tachado.
 
+Los productos **se ven siempre en MAYÚSCULAS**, se tecleen como se tecleen: se lee
+mejor de un vistazo en el pasillo del super. Es solo presentación (`text-transform`
+en CSS): el texto se guarda tal como se escribió, así que nada se pierde y el
+cambio no tocó las listas que ya existían. Al compartir con ↑ también sale en
+mayúsculas, para que se vea igual que en la app.
+
 ## Tamaño de la app
 
-Tocar **v1.08 aA** (debajo de las pestañas) abre los ajustes, con un deslizador
+Tocar **v1.09 aA** (debajo de las pestañas) abre los ajustes, con un deslizador
 que agranda o achica **toda** la app: letras, filas, pestañas y botones. Va del
 80 % al 170 %.
 
@@ -111,8 +117,8 @@ así que nadie puede averiguar qué listas existen.
 
 Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
 
-- `<button id="ver">v1.08 &nbsp;aA</button>` en `index.html`
-- `var VERSION = "lista-v1.08"` en `sw.js` — si no, queda el caché viejo
+- `<button id="ver">v1.09 &nbsp;aA</button>` en `index.html`
+- `var VERSION = "lista-v1.09"` en `sw.js` — si no, queda el caché viejo
 
 Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
 las imágenes por nombre y si no, sigue apareciendo el viejo.
