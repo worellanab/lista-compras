@@ -251,14 +251,14 @@
   <header>
     <div class="fila">
       <div id="tabs">
-        <button class="tab sel" type="button" data-tab="lista">Lista</button>
-        <button class="tab" type="button" data-tab="pedidos">Pedidos</button>
-        <button class="tab" type="button" data-tab="web">Web</button>
+        <button class="tab sel" type="button" data-tab="lista">Wong</button>
+        <button class="tab" type="button" data-tab="pedidos">Amazon</button>
+        <button class="tab" type="button" data-tab="web">Misc</button>
       </div>
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <button id="ver" type="button">v1.09 &nbsp;aA</button>
+      <button id="ver" type="button">v1.10 &nbsp;aA</button>
       <span id="count"></span>
     </div>
   </header>
@@ -348,7 +348,7 @@
     lista: {
       llave: "lista.v1",
       llave2: "lista.v2",
-      titulo: "Lista de compras",
+      titulo: "Wong",
       campo: "Agregar producto…",
       icono: "&#128722;",
       vacio: ["La lista está vacía", "Toca la pantalla y escribe"],
@@ -358,18 +358,18 @@
     pedidos: {
       llave: "pedidos.v1",
       llave2: "pedidos.v2",
-      titulo: "Pedidos pendientes",
+      titulo: "Amazon",
       campo: "Agregar pedido…",
       icono: "&#128230;",
-      vacio: ["No hay pedidos pendientes", "Amazon, Temu, lo que esté en camino"],
+      vacio: ["No hay pedidos pendientes", "Lo que esté en camino"],
       cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); },
       listo: function(n){ return n > 1 ? "recibidos" : "recibido"; }
     },
     web: {
       llave: "web.v1",
       llave2: "web.v2",
-      titulo: "Lista web",
-      campo: "Agregar link o cosa…",
+      titulo: "Misc",
+      campo: "Agregar algo…",
       icono: "&#127760;",
       vacio: ["No hay nada guardado", "Toca la pantalla y escribe"],
       cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); },

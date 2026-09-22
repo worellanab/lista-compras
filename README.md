@@ -15,9 +15,9 @@ en el iPhone desde la pantalla de inicio.
 
 Arriba hay tres listas que **no se mezclan**, cada una con su propio guardado:
 
-- **Lista** — el super. Lo que ya echaste al carrito se tacha; el segundo deslizado lo borra.
-- **Pedidos** — lo que está en camino (Amazon, Temu, etc). Al recibirlo se tacha, y luego se borra.
-- **Web** — links o cosas para ver/comprar online. Igual: primero tachado, luego borrado.
+- **Wong** — el super. Lo que ya echaste al carrito se tacha; el segundo deslizado lo borra.
+- **Amazon** — lo que está en camino. Al recibirlo se tacha, y luego se borra.
+- **Misc** — cualquier otra cosa (links, pendientes, lo que sea). Igual: primero tachado, luego borrado.
 
 Funcionan exactamente igual. La app abre en la pestaña donde la dejaste.
 La versión se muestra debajo de las pestañas.
@@ -35,7 +35,7 @@ La versión se muestra debajo de las pestañas.
 | Ordenar | Dejar presionado un producto (medio segundo, sin mover el dedo) y arrastrarlo arriba o abajo. Al soltar, el orden queda guardado |
 | Ver la lista completa | Botón "listo" del teclado o deslizar la lista |
 | Compartir / respaldar | Flecha ↑ arriba a la derecha |
-| Ajustes (tamaño y código) | Tocar **v1.09 aA** debajo de las pestañas |
+| Ajustes (tamaño y código) | Tocar **v1.10 aA** debajo de las pestañas |
 
 Si agregas un producto que ya está en la lista, no se duplica: se resalta, sube al
 tope y, si estaba tachado, vuelve a quedar pendiente.
@@ -50,7 +50,7 @@ mayúsculas, para que se vea igual que en la app.
 
 ## Tamaño de la app
 
-Tocar **v1.09 aA** (debajo de las pestañas) abre los ajustes, con un deslizador
+Tocar **v1.10 aA** (debajo de las pestañas) abre los ajustes, con un deslizador
 que agranda o achica **toda** la app: letras, filas, pestañas y botones. Va del
 80 % al 170 %.
 
@@ -117,8 +117,8 @@ así que nadie puede averiguar qué listas existen.
 
 Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
 
-- `<button id="ver">v1.09 &nbsp;aA</button>` en `index.html`
-- `var VERSION = "lista-v1.09"` en `sw.js` — si no, queda el caché viejo
+- `<button id="ver">v1.10 &nbsp;aA</button>` en `index.html`
+- `var VERSION = "lista-v1.10"` en `sw.js` — si no, queda el caché viejo
 
 Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
 las imágenes por nombre y si no, sigue apareciendo el viejo.
