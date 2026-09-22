@@ -111,7 +111,7 @@ así que nadie puede averiguar qué listas existen.
 
 Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
 
-- `<span id="ver">v1.08</span>` en `index.html`
+- `<button id="ver">v1.08 &nbsp;aA</button>` en `index.html`
 - `var VERSION = "lista-v1.08"` en `sw.js` — si no, queda el caché viejo
 
 Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
