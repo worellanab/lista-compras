@@ -5,7 +5,7 @@
    - resto de archivos: caché primero (arranque instantáneo).
    Para publicar una versión nueva basta con subir el VERSION de abajo. */
 
-var VERSION = "lista-v1.07";   // que coincida siempre con el #ver de index.html
+var VERSION = "lista-v1.08";   // que coincida siempre con el #ver de index.html
 var ASSETS = [
   "./",
   "./index.html",
