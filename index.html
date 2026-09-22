@@ -661,7 +661,7 @@
      lápida) y sube solo la diferencia. Sin internet todo sigue local y se
      empareja al reconectar. Tocar la versión muestra el código de la lista
      y permite unirse a la de otro teléfono. */
-  var SYNC_URL = "";               // ← pegar aquí la URL de Realtime Database
+  var SYNC_URL = "https://lista-compras-df125-default-rtdb.firebaseio.com";
   try { SYNC_URL = localStorage.getItem("sync.url") || SYNC_URL; } catch(e){}   // solo para pruebas
   SYNC_URL = String(SYNC_URL || "").replace(/\/+$/, "");
   if (!/^https?:\/\//.test(SYNC_URL)) SYNC_URL = "";

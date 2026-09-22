@@ -45,11 +45,11 @@ texto (WhatsApp, Notas, etc.).
 Si la sincronización está configurada (abajo), la lista además vive en una
 base de datos de Firebase para poder compartirse entre teléfonos.
 
-## Sincronizar entre teléfonos (opcional)
+## Sincronizar entre teléfonos
 
-Solo funciona si en `index.html` está pegada la URL de una base **Realtime
-Database** de Firebase (`var SYNC_URL = "…"`). Sin URL, la app es 100% local
-como siempre.
+Está activa: la base es la **Realtime Database** del proyecto `Lista-compras`
+en Firebase, y la URL está en `index.html` (`var SYNC_URL = "…"`). Si se deja
+esa variable vacía, la app vuelve a ser 100% local como antes.
 
 - Cada lista vive bajo un **código** aleatorio (`xxxx-xxxx-xxxx`). Tocar la
   versión (v1.06) lo muestra; en el otro teléfono se toca la versión y se
@@ -60,8 +60,9 @@ como siempre.
   30 días para no renacer en el otro teléfono.
 - Las tres pestañas se sincronizan por separado, como siempre.
 
-Cómo se creó la base (una vez): console.firebase.google.com → crear proyecto
-(sin Analytics) → Realtime Database → crear → pestaña Reglas:
+Las reglas de esa base (pestaña Reglas en la consola) son estas: se puede
+leer y escribir una lista si conoces su código, pero la raíz está cerrada,
+así que nadie puede averiguar qué listas existen.
 
 ```json
 {
