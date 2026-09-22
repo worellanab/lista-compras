@@ -5,7 +5,7 @@
    - resto de archivos: caché primero (arranque instantáneo).
    Para publicar una versión nueva basta con subir el VERSION de abajo. */
 
-var VERSION = "lista-v1.05";   // que coincida siempre con el #ver de index.html
+var VERSION = "lista-v1.06";   // que coincida siempre con el #ver de index.html
 var ASSETS = [
   "./",
   "./index.html",
@@ -40,6 +40,9 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
+  // Lo que va a otro dominio (la sincronización con Firebase) pasa directo:
+  // ni se cachea ni se intercepta, si no el stream en vivo se rompe.
+  if (req.url.indexOf(self.location.origin) !== 0) return;
 
   if (req.mode === "navigate") {
     e.respondWith(
