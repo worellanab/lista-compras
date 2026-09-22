@@ -32,6 +32,8 @@
     font:400 17px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     color:var(--text);
     -webkit-user-select:none;user-select:none;
+    /* sin el menú/lupa de iOS al dejar presionado: ese gesto aquí es "ordenar" */
+    -webkit-touch-callout:none;
   }
   #app{
     position:fixed;top:0;left:0;right:0;bottom:var(--kb);
@@ -86,6 +88,15 @@
     will-change:transform;
   }
   .item.snap{transition:transform .18s ease-out}
+
+  /* producto "levantado" para ordenarlo (dejar presionado) */
+  .row.drag{z-index:5;overflow:visible}
+  .row.drag .item{
+    background:var(--surface2);
+    border-bottom-color:transparent;border-radius:12px;
+    box-shadow:0 8px 24px rgba(0,0,0,.55);
+    transform:scale(1.02);
+  }
   .txt{flex:1;min-width:0;word-break:break-word;font-size:15px}
   .flash{animation:flash .9s ease-out}
   @keyframes flash{0%{background:#1E3A2A}100%{background:var(--bg)}}
@@ -157,7 +168,7 @@
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <span id="ver">v1.04</span>
+      <span id="ver">v1.05</span>
       <span id="count"></span>
     </div>
   </header>
@@ -402,13 +413,25 @@
     if (node.parentNode) node.parentNode.classList.add("swipe");
     sx = ev.touches[0].clientX; sy = ev.touches[0].clientY;
     moving = false; lock = null;
+    /* dedo quieto medio segundo = levantar el producto para ordenarlo */
+    clearTimeout(pressTmr);
+    pressTmr = setTimeout(function(){
+      if (node && lock === null) startDrag(node);
+    }, 400);
   }, {passive:true});
 
   items.addEventListener("touchmove", function(ev){
+    if (dragging){
+      if (ev.cancelable) ev.preventDefault();     // el dedo mueve el producto, no la lista
+      lastY = ev.touches[0].clientY;
+      moveDrag(lastY);
+      return;
+    }
     if (!node) return;
     var dx = ev.touches[0].clientX - sx, dy = ev.touches[0].clientY - sy;
     if (lock === null){
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      clearTimeout(pressTmr);                     // ya se movió: no es "dejar presionado"
       lock = (Math.abs(dx) > Math.abs(dy) + 4) ? "x" : "y";
     }
     if (lock !== "x") return;
@@ -418,6 +441,8 @@
   }, {passive:false});
 
   function endSwipe(ev){
+    clearTimeout(pressTmr);
+    if (dragging){ endDrag(); return; }
     if (!node) return;
     var el = node, dx = 0;
     if (ev.changedTouches && ev.changedTouches[0]) dx = ev.changedTouches[0].clientX - sx;
@@ -435,6 +460,83 @@
   }
   items.addEventListener("touchend", endSwipe, {passive:true});
   items.addEventListener("touchcancel", endSwipe, {passive:true});
+
+  /* ---------------- dejar presionado = ordenar ----------------
+     Mantener el dedo quieto sobre un producto lo "levanta"; arrastrando
+     hacia arriba o abajo cambia de lugar y al soltar se guarda el orden.
+     Cerca del borde de la pantalla la lista se desplaza sola. */
+  var pressTmr=null, dragging=false, dragRow=null, dragY0=0, lastY=0;
+
+  function startDrag(el){
+    var li = el.parentNode;
+    if (!li || !li.classList.contains("row")) return;
+    dragging = true; dragRow = li;
+    node = null;                                  // este gesto ya no es swipe
+    li.classList.remove("swipe");
+    li.classList.add("drag");
+    dragY0 = sy; lastY = sy;
+    requestAnimationFrame(autoScroll);
+  }
+
+  function moveDrag(y){
+    if (!dragRow) return;
+    dragRow.style.transform = "translateY(" + (y - dragY0) + "px)";
+    var r = dragRow.getBoundingClientRect(), c = r.top + r.height/2, v, vr;
+
+    /* al cruzar la mitad del vecino, se intercambian de lugar; el ajuste a
+       dragY0 compensa el brinco del DOM para que no se mueva bajo el dedo */
+    v = dragRow.previousElementSibling;
+    while (v && v.classList.contains("row")){
+      vr = v.getBoundingClientRect();
+      if (c >= vr.top + vr.height/2) break;
+      items.insertBefore(dragRow, v);
+      dragY0 -= vr.height;
+      dragRow.style.transform = "translateY(" + (y - dragY0) + "px)";
+      v = dragRow.previousElementSibling;
+    }
+    v = dragRow.nextElementSibling;
+    while (v && v.classList.contains("row")){
+      vr = v.getBoundingClientRect();
+      if (c <= vr.top + vr.height/2) break;
+      items.insertBefore(dragRow, v.nextSibling);
+      dragY0 += vr.height;
+      dragRow.style.transform = "translateY(" + (y - dragY0) + "px)";
+      v = dragRow.nextElementSibling;
+    }
+  }
+
+  function autoScroll(){
+    if (!dragging) return;
+    var r = scroller.getBoundingClientRect(), z = 56, v = 0;
+    if (lastY < r.top + z) v = -Math.ceil((r.top + z - lastY) / 6);
+    else if (lastY > r.bottom - z) v = Math.ceil((lastY - (r.bottom - z)) / 6);
+    if (v){
+      var antes = scroller.scrollTop;
+      scroller.scrollTop = antes + v;
+      var real = scroller.scrollTop - antes;
+      if (real){ dragY0 -= real; moveDrag(lastY); }
+    }
+    requestAnimationFrame(autoScroll);
+  }
+
+  function endDrag(){
+    dragging = false;
+    var li = dragRow; dragRow = null;
+    li.classList.remove("drag");
+    li.style.transform = "";
+
+    /* el DOM ya quedó en el orden final: se copia a los datos y se guarda */
+    var mapa = {}, orden = [], filas = items.querySelectorAll(".item"), i, o;
+    for (i=0;i<data.length;i++) mapa[data[i].id] = data[i];
+    for (i=0;i<filas.length;i++){
+      o = mapa[filas[i].dataset.id];
+      if (o) orden.push(o);
+    }
+    if (orden.length === data.length){
+      for (i=0;i<data.length;i++) data[i] = orden[i];
+      save();
+    }
+  }
 
   /* ---------------- borrar + deshacer ---------------- */
   var papelera = null, tmr = null;
