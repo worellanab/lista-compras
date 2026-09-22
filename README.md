@@ -30,6 +30,7 @@ La versión se muestra debajo de las pestañas.
 | Escribir | Tocar cualquier parte de la pantalla → sube el teclado |
 | Agregar | Escribir y darle a Enter. El teclado **no se cierra**: sigues escribiendo |
 | Comprado / borrar | Deslizar el producto hacia la izquierda (con "Deshacer" por 5 segundos). **Tocar un producto no hace nada**: un roce accidental no cambia la lista |
+| Ordenar | Dejar presionado un producto (medio segundo, sin mover el dedo) y arrastrarlo arriba o abajo. Al soltar, el orden queda guardado |
 | Ver la lista completa | Botón "listo" del teclado o deslizar la lista |
 | Compartir / respaldar | Flecha ↑ arriba a la derecha |
 
@@ -54,8 +55,8 @@ Como respaldo, el botón ↑ comparte la lista como texto (WhatsApp, Notas, etc.
 
 Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
 
-- `<span id="ver">v1.04</span>` en `index.html`
-- `var VERSION = "lista-v1.04"` en `sw.js` — si no, queda el caché viejo
+- `<span id="ver">v1.05</span>` en `index.html`
+- `var VERSION = "lista-v1.05"` en `sw.js` — si no, queda el caché viejo
 
 Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
 las imágenes por nombre y si no, sigue apareciendo el viejo.
