@@ -26,10 +26,16 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   /* Pantalla fija: sin doble-tap para acercar, sin pellizco, sin que iOS
      agrande el texto solo. La app nunca cambia de escala. */
-  html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  /* --s es el tamaño de TODA la app: cada medida de abajo está en "rem", o sea
+     relativa a esto. 1rem = 16px cuando --s es 1. Se ajusta con el deslizador
+     de Ajustes y se guarda solo en este teléfono. */
+  html{
+    touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%;
+    font-size:calc(16px * var(--s, 1));
+  }
   html,body{margin:0;padding:0;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg)}
   body{
-    font:400 17px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font:400 1.0625rem/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     color:var(--text);
     -webkit-user-select:none;user-select:none;
     /* sin el menú/lupa de iOS al dejar presionado: ese gesto aquí es "ordenar" */
@@ -43,39 +49,44 @@
 
   /* ---------- header ---------- */
   header{
-    flex:0 0 auto;padding:8px 12px 7px;
+    flex:0 0 auto;padding:0.5rem 0.75rem 0.4375rem;
     border-bottom:1px solid var(--line);
   }
-  .fila{display:flex;align-items:center;gap:8px}
-  #tabs{display:flex;gap:4px;flex:1;background:var(--surface2);border-radius:11px;padding:3px}
+  .fila{display:flex;align-items:center;gap:0.5rem}
+  #tabs{display:flex;gap:0.25rem;flex:1;background:var(--surface2);border-radius:0.6875rem;padding:0.1875rem}
   .tab{
     -webkit-appearance:none;appearance:none;border:0;background:transparent;
-    color:var(--muted);font-family:inherit;font-weight:600;font-size:15px;
-    letter-spacing:-.2px;flex:1;padding:8px 6px;border-radius:9px;
+    color:var(--muted);font-family:inherit;font-weight:600;font-size:0.9375rem;
+    letter-spacing:-.2px;flex:1;padding:0.5rem 0.375rem;border-radius:0.5625rem;
   }
   .tab.sel{background:var(--bg);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.4)}
   .sub{
-    display:flex;align-items:baseline;gap:8px;
-    padding:6px 6px 0;
+    display:flex;align-items:baseline;gap:0.5rem;
+    padding:0.375rem 0.375rem 0;
   }
-  #ver{color:#4E5A66;font-size:11px;letter-spacing:.4px;flex:0 0 auto}
-  #count{color:var(--muted);font-size:13px;flex:1;text-align:right}
+  #ver{
+    -webkit-appearance:none;appearance:none;border:0;background:transparent;
+    color:#4E5A66;font-family:inherit;font-size:0.6875rem;letter-spacing:.4px;
+    flex:0 0 auto;padding:0.125rem 0;
+  }
+  #ver:active{color:var(--muted)}
+  #count{color:var(--muted);font-size:0.8125rem;flex:1;text-align:right}
   .icon-btn{
     -webkit-appearance:none;appearance:none;border:0;background:var(--surface2);
-    color:var(--text);width:34px;height:34px;border-radius:10px;
-    font-size:16px;line-height:1;display:grid;place-items:center;
+    color:var(--text);width:2.125rem;height:2.125rem;border-radius:0.625rem;
+    font-size:1rem;line-height:1;display:grid;place-items:center;
   }
   .icon-btn:active{background:#2A3641}
 
   /* ---------- list ---------- */
   #scroller{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-  #items{list-style:none;margin:0;padding:4px 0 0}
+  #items{list-style:none;margin:0;padding:0.25rem 0 0}
 
   .row{position:relative;overflow:hidden;background:var(--bg)}
   .row .bg{
     position:absolute;inset:0;background:var(--danger);
     display:flex;align-items:center;justify-content:flex-end;
-    padding-right:22px;color:#fff;font-size:19px;font-weight:600;
+    padding-right:1.375rem;color:#fff;font-size:1.1875rem;font-weight:600;
     /* solo existe mientras arrastras: si no, con alturas de píxel partido
        se asomaba un hilito rojo entre renglón y renglón */
     opacity:0;
@@ -84,11 +95,11 @@
   /* el fondo dice lo que va a pasar al soltar */
   .row .bg.marcar{background:var(--accent);color:#062B14}
   .row .bg.desmarcar{background:var(--surface2);color:var(--text);
-    justify-content:flex-start;padding-left:22px;padding-right:0}
+    justify-content:flex-start;padding-left:1.375rem;padding-right:0}
   .item{
     position:relative;background:var(--bg);
-    display:flex;align-items:center;gap:11px;
-    padding:10px 16px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:0.6875rem;
+    padding:0.625rem 1rem;border-bottom:1px solid var(--line);
     will-change:transform;
   }
   .item.snap{transition:transform .18s ease-out}
@@ -97,11 +108,11 @@
   .row.drag{z-index:5;overflow:visible}
   .row.drag .item{
     background:var(--surface2);
-    border-bottom-color:transparent;border-radius:12px;
+    border-bottom-color:transparent;border-radius:0.75rem;
     box-shadow:0 8px 24px rgba(0,0,0,.55);
     transform:scale(1.02);
   }
-  .txt{flex:1;min-width:0;word-break:break-word;font-size:15px;
+  .txt{flex:1;min-width:0;word-break:break-word;font-size:0.9375rem;
     transition:opacity .2s ease-out}
   /* ya está en el carrito: tachado y apagado, pero sigue en la lista */
   .item.done .txt{text-decoration:line-through;opacity:.4}
@@ -111,25 +122,26 @@
   /* zona vacía: tocar aquí abre el teclado */
   #tapzone{min-height:45vh}
 
-  #empty{padding:70px 26px;text-align:center;color:var(--muted)}
-  #empty .big{font-size:44px;margin-bottom:14px;opacity:.55}
-  #empty .t{font-size:16px;color:#9AA6B1}
-  #empty .s{font-size:14px;margin-top:6px}
+  #empty{padding:4.375rem 1.625rem;text-align:center;color:var(--muted)}
+  #empty .big{font-size:2.75rem;margin-bottom:0.875rem;opacity:.55}
+  #empty .t{font-size:1rem;color:#9AA6B1}
+  #empty .s{font-size:0.875rem;margin-top:0.375rem}
 
   /* ---------- composer ---------- */
   #composer{
-    flex:0 0 auto;display:flex;gap:10px;align-items:center;
-    padding:9px 12px calc(9px + env(safe-area-inset-bottom));
+    flex:0 0 auto;display:flex;gap:0.625rem;align-items:center;
+    padding:0.5625rem 0.75rem calc(0.5625rem + env(safe-area-inset-bottom));
     background:var(--surface);border-top:1px solid var(--line);
   }
   #entry{
     flex:1;min-width:0;-webkit-appearance:none;appearance:none;
     background:var(--surface2);border:1px solid transparent;color:var(--text);
-    border-radius:12px;padding:12px 14px;
+    border-radius:0.75rem;padding:0.75rem 0.875rem;
     /* OJO: en atajo "font:400 17px/1.2 inherit" no vale — inherit no es una
        familia válida y el navegador descarta TODA la regla, dejando el campo
        en 13.3px. Y por debajo de 16px iOS hace zoom solo al tocarlo. */
-    font-family:inherit;font-weight:400;font-size:17px;line-height:1.2;
+    /* el max() es a propósito: por debajo de 16px reales iOS hace zoom al tocarlo */
+    font-family:inherit;font-weight:400;font-size:max(16px, 1.0625rem);line-height:1.2;
     -webkit-user-select:text;user-select:text;
   }
   #entry:focus{outline:0;border-color:#2E3B47}
@@ -137,8 +149,8 @@
   #add{
     -webkit-appearance:none;appearance:none;border:0;
     background:var(--accent);color:#062B14;
-    width:46px;height:46px;border-radius:12px;
-    font-size:27px;font-weight:400;line-height:1;
+    width:2.875rem;height:2.875rem;border-radius:0.75rem;
+    font-size:1.6875rem;font-weight:400;line-height:1;
     display:grid;place-items:center;flex:0 0 auto;
   }
   #add:active{filter:brightness(.85)}
@@ -146,21 +158,87 @@
 
   /* ---------- toast ---------- */
   #toast{
-    position:fixed;left:16px;right:16px;bottom:calc(var(--kb) + 76px + env(safe-area-inset-bottom));
-    background:var(--surface2);border:1px solid var(--line);border-radius:13px;
-    padding:13px 16px;display:flex;align-items:center;gap:12px;
+    position:fixed;left:16px;right:16px;bottom:calc(var(--kb) + 4.75rem + env(safe-area-inset-bottom));
+    background:var(--surface2);border:1px solid var(--line);border-radius:0.8125rem;
+    padding:0.8125rem 1rem;display:flex;align-items:center;gap:0.75rem;
     box-shadow:0 10px 30px rgba(0,0,0,.5);
     transform:translateY(18px);opacity:0;pointer-events:none;
-    transition:opacity .18s,transform .18s;font-size:15px;
+    transition:opacity .18s,transform .18s;font-size:0.9375rem;
   }
   #toast.on{opacity:1;transform:none;pointer-events:auto}
   #toast .m{flex:1;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #undo{
     -webkit-appearance:none;appearance:none;border:0;background:transparent;
-    color:var(--accent);font-family:inherit;font-weight:600;font-size:15px;
-    padding:4px 2px;flex:0 0 auto;
+    color:var(--accent);font-family:inherit;font-weight:600;font-size:0.9375rem;
+    padding:0.25rem 0.125rem;flex:0 0 auto;
   }
+
+  /* ---------- ajustes (se abre tocando la versión) ---------- */
+  #panel{
+    position:fixed;inset:0;z-index:20;
+    background:rgba(0,0,0,.55);
+    display:flex;align-items:flex-end;
+    opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  #panel.on{opacity:1;pointer-events:auto}
+  #panel .hoja{
+    width:100%;background:var(--surface);
+    border-top-left-radius:18px;border-top-right-radius:18px;
+    border-top:1px solid var(--line);
+    padding:18px 20px calc(20px + env(safe-area-inset-bottom));
+    transform:translateY(100%);transition:transform .22s ease-out;
+    /* el panel NO escala: así nunca se vuelve imposible de tocar */
+    font-size:16px;
+  }
+  #panel.on .hoja{transform:none}
+  #panel .tit{font-size:13px;font-weight:600;color:var(--muted);
+    letter-spacing:.3px;text-transform:uppercase;margin-bottom:12px}
+  #panel .nota{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.4}
+  #panel .sep{height:1px;background:var(--line);margin:22px 0 18px}
+  .zfila{display:flex;align-items:center;gap:14px}
+  .zfila .aa{color:var(--muted);flex:0 0 auto;line-height:1}
+  .zfila .chica{font-size:14px}
+  .zfila .grande{font-size:25px}
+  #zoom{
+    -webkit-appearance:none;appearance:none;flex:1;min-width:0;
+    height:30px;background:transparent;
+  }
+  #zoom::-webkit-slider-runnable-track{
+    height:6px;border-radius:3px;background:var(--surface2);
+  }
+  #zoom::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;
+    width:30px;height:30px;border-radius:50%;
+    background:var(--text);margin-top:-12px;
+    box-shadow:0 2px 6px rgba(0,0,0,.5);
+  }
+  #codigo{
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:21px;letter-spacing:1px;color:var(--text);
+    background:var(--surface2);border-radius:11px;
+    padding:13px 14px;text-align:center;
+    -webkit-user-select:all;user-select:all;
+  }
+  #panel .btn{
+    -webkit-appearance:none;appearance:none;width:100%;
+    border:0;background:var(--surface2);color:var(--text);
+    font-family:inherit;font-size:16px;font-weight:600;
+    padding:14px;border-radius:12px;margin-top:10px;
+  }
+  #panel .btn.primario{background:var(--accent);color:#062B14;margin-top:16px}
+  #panel .btn:active{filter:brightness(.85)}
 </style>
+<script>
+/* El tamaño guardado se aplica ANTES de dibujar nada, para que la app no
+   aparezca en un tamaño y salte al otro. */
+(function(){
+  try {
+    var z = parseInt(localStorage.getItem("ui.escala"), 10);
+    if (z >= 80 && z <= 170)
+      document.documentElement.style.setProperty("--s", z / 100);
+  } catch(e){}
+})();
+</script>
 </head>
 <body>
 
@@ -175,7 +253,7 @@
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <span id="ver">v1.07</span>
+      <button id="ver" type="button">v1.08 &nbsp;aA</button>
       <span id="count"></span>
     </div>
   </header>
@@ -191,6 +269,30 @@
            autocomplete="off" spellcheck="false">
     <button id="add" type="submit" disabled>+</button>
   </form>
+</div>
+
+<div id="panel">
+  <div class="hoja">
+    <div class="tit">Tamaño</div>
+    <div class="zfila">
+      <span class="aa chica">A</span>
+      <input id="zoom" type="range" min="80" max="170" step="5" value="100"
+             aria-label="Tamaño de la app">
+      <span class="aa grande">A</span>
+    </div>
+    <div class="nota">Cambia el tamaño de toda la app. Es de este teléfono:
+      el otro no se entera.</div>
+
+    <div class="sep"></div>
+
+    <div class="tit">Misma lista en otro teléfono</div>
+    <div id="codigo"></div>
+    <div class="nota">Escribe este código en el otro teléfono (ahí también:
+      tocar la versión) y los dos verán la misma lista.</div>
+    <button class="btn" id="unir" type="button">Usar el código de otro teléfono…</button>
+
+    <button class="btn primario" id="cerrar" type="button">Listo</button>
+  </div>
 </div>
 
 <div id="toast"><span class="m"></span><button id="undo" type="button">Deshacer</button></div>
@@ -481,7 +583,7 @@
 
   /* ------- tocar cualquier parte = abrir el teclado ------- */
   document.addEventListener("click", function(ev){
-    if (ev.target.closest("button, input, .item, #ver")) return;
+    if (ev.target.closest("button, input, .item, #ver, #panel")) return;
     entry.focus();
   });
 
@@ -878,23 +980,52 @@
     if (es){ try { es.close(); } catch(e){} es = null; esTab = ""; }
   }
 
-  /* tocar la versión: ver el código de esta lista o unirse a otra */
-  $("#ver").addEventListener("click", function(){
+  /* ---------------- ajustes: tamaño + código ----------------
+     El tamaño es de ESTE teléfono: se guarda aparte y nunca se sincroniza,
+     así cada quien ve la app del tamaño que le acomoda. */
+  var ESC_KEY = "ui.escala", panel = $("#panel"), zoom = $("#zoom");
+
+  function leerEscala(){
+    var z = 100;
+    try { z = parseInt(localStorage.getItem(ESC_KEY), 10); } catch(e){}
+    return (z >= 80 && z <= 170) ? z : 100;
+  }
+  function ponerEscala(z){
+    document.documentElement.style.setProperty("--s", z / 100);
+    try { localStorage.setItem(ESC_KEY, String(z)); } catch(e){}
+  }
+
+  zoom.value = leerEscala();
+  zoom.addEventListener("input", function(){   // se ve crecer mientras arrastras
+    ponerEscala(parseInt(zoom.value, 10) || 100);
+  });
+
+  function abrirPanel(){
+    zoom.value = leerEscala();
+    $("#codigo").textContent = SYNC_URL ? codigo : "sin sincronización";
+    $("#unir").style.display = SYNC_URL ? "" : "none";
+    panel.classList.add("on");
+  }
+  function cerrarPanel(){ panel.classList.remove("on"); }
+
+  $("#ver").addEventListener("click", abrirPanel);
+  $("#cerrar").addEventListener("click", cerrarPanel);
+  panel.addEventListener("click", function(ev){   // tocar fuera también cierra
+    if (ev.target === panel) cerrarPanel();
+  });
+
+  $("#unir").addEventListener("click", function(){
     if (!SYNC_URL) return;
-    var v = prompt(
-      "Sincronización entre teléfonos\n\n" +
-      "El código de ESTA lista es:\n\n      " + codigo + "\n\n" +
-      "En el otro teléfono, toca la versión y escribe ese código.\n" +
-      "Para unirte tú a otra lista, escribe aquí su código:", ""
-    );
+    var v = prompt("Escribe el código del otro teléfono:", "");
     if (v == null) return;
     v = v.toLowerCase().replace(/[^a-z0-9-]/g, "");
     if (!v) return;
     if (!codigoValido(v)){ alert("Ese código no se ve bien.\nFormato: xxxx-xxxx-xxxx"); return; }
-    if (v === codigo) return;
+    if (v === codigo){ cerrarPanel(); return; }
     codigo = v;
     try { localStorage.setItem(CODE_KEY, codigo); } catch(e){}
     cerrarStream(); abrirStream(); pedirSync();
+    cerrarPanel();
     showToast("Unido a la lista " + codigo);
   });
 
