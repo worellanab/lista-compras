@@ -15,9 +15,9 @@ en el iPhone desde la pantalla de inicio.
 
 Arriba hay tres listas que **no se mezclan**, cada una con su propio guardado:
 
-- **Lista** — el super. Lo que ya compraste se desliza y se borra.
-- **Pedidos** — lo que está en camino (Amazon, Temu, etc). Al recibirlo, se desliza y se borra.
-- **Web** — links o cosas para ver/comprar online. Cuando está listo, se desliza y se borra.
+- **Lista** — el super. Lo que ya echaste al carrito se tacha; el segundo deslizado lo borra.
+- **Pedidos** — lo que está en camino (Amazon, Temu, etc). Al recibirlo se tacha, y luego se borra.
+- **Web** — links o cosas para ver/comprar online. Igual: primero tachado, luego borrado.
 
 Funcionan exactamente igual. La app abre en la pestaña donde la dejaste.
 La versión se muestra debajo de las pestañas.
@@ -29,12 +29,17 @@ La versión se muestra debajo de las pestañas.
 | Cambiar de lista | Tocar "Lista" o "Pedidos" arriba (no cierra el teclado) |
 | Escribir | Tocar cualquier parte de la pantalla → sube el teclado |
 | Agregar | Escribir y darle a Enter. El teclado **no se cierra**: sigues escribiendo |
-| Comprado / borrar | Deslizar el producto hacia la izquierda (con "Deshacer" por 5 segundos). **Tocar un producto no hace nada**: un roce accidental no cambia la lista |
+| Marcar (ya lo tengo) | Deslizar el producto hacia la izquierda: queda **tachado y apagado**, pero sigue en la lista |
+| Desmarcar | Deslizar hacia la derecha un producto tachado |
+| Borrar | Deslizar hacia la izquierda **otra vez**, ya estando tachado (con "Deshacer" por 5 segundos). **Tocar un producto no hace nada**: un roce accidental no cambia la lista |
 | Ordenar | Dejar presionado un producto (medio segundo, sin mover el dedo) y arrastrarlo arriba o abajo. Al soltar, el orden queda guardado |
 | Ver la lista completa | Botón "listo" del teclado o deslizar la lista |
 | Compartir / respaldar | Flecha ↑ arriba a la derecha |
 
-Si agregas un producto que ya está en la lista, no se duplica: se resalta y sube al tope.
+Si agregas un producto que ya está en la lista, no se duplica: se resalta, sube al
+tope y, si estaba tachado, vuelve a quedar pendiente.
+
+El contador de arriba lleva las dos cuentas: lo que falta y lo que ya está tachado.
 
 ## Dónde viven los datos
 
@@ -52,7 +57,7 @@ en Firebase, y la URL está en `index.html` (`var SYNC_URL = "…"`). Si se deja
 esa variable vacía, la app vuelve a ser 100% local como antes.
 
 - Cada lista vive bajo un **código** aleatorio (`xxxx-xxxx-xxxx`). Tocar la
-  versión (v1.06) lo muestra; en el otro teléfono se toca la versión y se
+  versión (v1.07) lo muestra; en el otro teléfono se toca la versión y se
   teclea ese código una sola vez. Desde ahí, los dos ven la misma lista.
 - Quien no tenga el código no puede leer ni adivinar la lista.
 - Sin internet todo sigue funcionando local; al reconectar se emparejan.
@@ -90,8 +95,8 @@ así que nadie puede averiguar qué listas existen.
 
 Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
 
-- `<span id="ver">v1.06</span>` en `index.html`
-- `var VERSION = "lista-v1.06"` en `sw.js` — si no, queda el caché viejo
+- `<span id="ver">v1.07</span>` en `index.html`
+- `var VERSION = "lista-v1.07"` en `sw.js` — si no, queda el caché viejo
 
 Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
 las imágenes por nombre y si no, sigue apareciendo el viejo.

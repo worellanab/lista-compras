@@ -3,8 +3,6 @@
 <head>
 <meta charset="utf-8">
 <title>Lista</title>
-<!-- La app es 100% local: no carga nada de afuera ni manda nada afuera.
-     Esta política lo vuelve obligatorio a nivel del navegador. -->
 <!-- La app no carga nada de afuera. La única salida permitida es la base de
      datos de la sincronización (Firebase), y solo si está configurada. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self'; manifest-src 'self'; connect-src 'self' https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self'; base-uri 'none'; form-action 'none'">
@@ -83,6 +81,10 @@
     opacity:0;
   }
   .row.swipe .bg{opacity:1}
+  /* el fondo dice lo que va a pasar al soltar */
+  .row .bg.marcar{background:var(--accent);color:#062B14}
+  .row .bg.desmarcar{background:var(--surface2);color:var(--text);
+    justify-content:flex-start;padding-left:22px;padding-right:0}
   .item{
     position:relative;background:var(--bg);
     display:flex;align-items:center;gap:11px;
@@ -99,7 +101,10 @@
     box-shadow:0 8px 24px rgba(0,0,0,.55);
     transform:scale(1.02);
   }
-  .txt{flex:1;min-width:0;word-break:break-word;font-size:15px}
+  .txt{flex:1;min-width:0;word-break:break-word;font-size:15px;
+    transition:opacity .2s ease-out}
+  /* ya está en el carrito: tachado y apagado, pero sigue en la lista */
+  .item.done .txt{text-decoration:line-through;opacity:.4}
   .flash{animation:flash .9s ease-out}
   @keyframes flash{0%{background:#1E3A2A}100%{background:var(--bg)}}
 
@@ -170,7 +175,7 @@
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <span id="ver">v1.06</span>
+      <span id="ver">v1.07</span>
       <span id="count"></span>
     </div>
   </header>
@@ -240,7 +245,8 @@
       campo: "Agregar producto…",
       icono: "&#128722;",
       vacio: ["La lista está vacía", "Toca la pantalla y escribe"],
-      cuenta: function(n){ return n + " por comprar"; }
+      cuenta: function(n){ return n + " por comprar"; },
+      listo: function(n){ return n > 1 ? "en el carrito" : "en el carrito"; }
     },
     pedidos: {
       llave: "pedidos.v1",
@@ -249,7 +255,8 @@
       campo: "Agregar pedido…",
       icono: "&#128230;",
       vacio: ["No hay pedidos pendientes", "Amazon, Temu, lo que esté en camino"],
-      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); }
+      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); },
+      listo: function(n){ return n > 1 ? "recibidos" : "recibido"; }
     },
     web: {
       llave: "web.v1",
@@ -258,7 +265,8 @@
       campo: "Agregar link o cosa…",
       icono: "&#127760;",
       vacio: ["No hay nada guardado", "Toca la pantalla y escribe"],
-      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); }
+      cuenta: function(n){ return n + " pendiente" + (n > 1 ? "s" : ""); },
+      listo: function(n){ return n > 1 ? "listos" : "listo"; }
     }
   };
   var TAB_KEY = "lista.tab";
@@ -283,7 +291,8 @@
         id: (typeof o.id === "string" && o.id) ? o.id : nuevoId(),
         t: t,
         ts: sanearNum(o.ts) === null ? Date.now() : o.ts,
-        pos: sanearNum(o.pos) === null ? out.length : o.pos
+        pos: sanearNum(o.pos) === null ? out.length : o.pos,
+        c: o.c ? 1 : 0
       });
     }
     return out;
@@ -304,7 +313,7 @@
       return { items: sanearItemsV2(v2.items), del: sanearDel(v2.del) };
     }
     var viejo = cargar(c.llave), items = [], i, ahora = Date.now();   // migración desde v1
-    for (i = 0; i < viejo.length; i++) items.push({ id: viejo[i].id, t: viejo[i].t, ts: ahora, pos: i });
+    for (i = 0; i < viejo.length; i++) items.push({ id: viejo[i].id, t: viejo[i].t, ts: ahora, pos: i, c: 0 });
     return { items: items, del: {} };
   }
 
@@ -371,8 +380,17 @@
 
     for (i=0;i<data.length;i++) items.appendChild(rowFor(data[i]));
 
-    countEl.textContent = data.length ? cfg.cuenta(data.length) : "";
+    actualizarCuenta();
     flashId = null;
+  }
+
+  function actualizarCuenta(){
+    var pend = 0, i;
+    for (i = 0; i < data.length; i++) if (!data[i].c) pend++;
+    var marcados = data.length - pend;
+    countEl.textContent = data.length
+      ? cfg.cuenta(pend) + (marcados ? " · " + marcados + " " + cfg.listo(marcados) : "")
+      : "";
   }
 
   function rowFor(it){
@@ -380,10 +398,10 @@
     li.className = "row";
 
     var bg = document.createElement("div");
-    bg.className = "bg"; bg.textContent = "Borrar";
+    bg.className = "bg";
 
     var d = document.createElement("div");
-    d.className = "item" + (it.id === flashId ? " flash" : "");
+    d.className = "item" + (it.c ? " done" : "") + (it.id === flashId ? " flash" : "");
     d.dataset.id = it.id;
 
     var txt = document.createElement("div");
@@ -422,6 +440,7 @@
       if (norm(data[i].t) === n){
         var it = data.splice(i,1)[0];   // ya existe: lo sube al tope
         it.pos = posTope(); it.ts = Date.now();
+        it.c = 0;                       // si estaba tachado, vuelve a pendiente
         data.unshift(it);
         flashId = it.id;
         save(); render(); scroller.scrollTop = 0;
@@ -429,7 +448,7 @@
       }
     }
 
-    var nuevo = { id: nuevoId(), t: text, ts: Date.now(), pos: posTope() };
+    var nuevo = { id: nuevoId(), t: text, ts: Date.now(), pos: posTope(), c: 0 };
     data.unshift(nuevo);
     flashId = nuevo.id;
     save(); render(); scroller.scrollTop = 0;
@@ -471,16 +490,39 @@
     if (document.activeElement === entry) ev.preventDefault();
   });
 
-  /* ---------------- swipe para borrar ----------------
-     Tocar un producto NO hace nada: la única forma de sacarlo de la lista
-     es deslizarlo a la izquierda (con "Deshacer" por 5 segundos). Así un
-     roce accidental no cambia nada. */
-  var sx=0, sy=0, node=null, moving=false, lock=null;
+  /* ---------------- swipe: marcar y borrar ----------------
+     Tocar un producto NO hace nada, así un roce accidental no cambia nada.
+     Todo se hace deslizando:
+       sin marcar,  a la izquierda -> se marca (tachado y apagado)
+       ya marcado,  a la izquierda -> se borra (con "Deshacer" por 5 s)
+       ya marcado,  a la derecha   -> se desmarca
+     El fondo que aparece al arrastrar dice qué va a pasar al soltar. */
+  var UMBRAL = 85;
+  var sx=0, sy=0, node=null, moving=false, lock=null, fondo=null;
+
+  function estaMarcado(el){ return el.classList.contains("done"); }
+
+  /* pinta el fondo según hacia dónde va el dedo y cómo está el producto */
+  function pintarFondo(el, dx){
+    if (!fondo) return;
+    var marcado = estaMarcado(el);
+    fondo.classList.remove("marcar", "desmarcar");
+    if (dx > 0){
+      fondo.classList.add("desmarcar");
+      fondo.textContent = marcado ? "Desmarcar" : "";
+    } else if (marcado){
+      fondo.textContent = "Borrar";                 // rojo, el de siempre
+    } else {
+      fondo.classList.add("marcar");
+      fondo.textContent = "\u2713 Listo";
+    }
+  }
 
   items.addEventListener("touchstart", function(ev){
     var el = ev.target.closest(".item");
     if (!el) return;
     node = el; node.classList.remove("snap");
+    fondo = node.parentNode ? node.parentNode.querySelector(".bg") : null;
     if (node.parentNode) node.parentNode.classList.add("swipe");
     sx = ev.touches[0].clientX; sy = ev.touches[0].clientY;
     moving = false; lock = null;
@@ -508,7 +550,9 @@
     if (lock !== "x") return;
     moving = true;
     if (ev.cancelable) ev.preventDefault();       // bloquea el scroll mientras arrastras
-    node.style.transform = "translateX(" + Math.min(0, dx) + "px)";
+    if (dx > 0 && !estaMarcado(node)) dx = 0;     // sin marcar no hay nada que desmarcar
+    pintarFondo(node, dx);
+    node.style.transform = "translateX(" + dx + "px)";
   }, {passive:false});
 
   function endSwipe(ev){
@@ -517,17 +561,21 @@
     if (!node) return;
     var el = node, dx = 0;
     if (ev.changedTouches && ev.changedTouches[0]) dx = ev.changedTouches[0].clientX - sx;
-    node = null;
+    node = null; fondo = null;
 
-    if (lock === "x" && dx < -95){
-      el.classList.add("snap");
+    if (lock === "x" && dx < -UMBRAL && estaMarcado(el)){
+      el.classList.add("snap");                   // segundo deslizamiento: se va
       el.style.transform = "translateX(-100%)";
       remove(el.dataset.id);
       return;
     }
+
     el.classList.add("snap");
     el.style.transform = "";
     if (el.parentNode) el.parentNode.classList.remove("swipe");
+
+    if (lock === "x" && dx < -UMBRAL) marcar(el, 1);        // primero: se tacha
+    else if (lock === "x" && dx > UMBRAL) marcar(el, 0);    // a la derecha: se destacha
   }
   items.addEventListener("touchend", endSwipe, {passive:true});
   items.addEventListener("touchcancel", endSwipe, {passive:true});
@@ -619,6 +667,24 @@
     }
   }
 
+  /* ---------------- marcar / desmarcar ----------------
+     Se cambia la clase del nodo a mano (no render completo) para que la raya
+     y el apagado entren suaves justo cuando el producto vuelve a su sitio. */
+  function marcar(el, v){
+    var id = el.dataset.id, i;
+    for (i = 0; i < data.length; i++){
+      if (data[i].id === id){
+        if (!data[i].c === !v) return;            // ya estaba así
+        data[i].c = v ? 1 : 0;
+        data[i].ts = Date.now();
+        el.classList.toggle("done", !!v);
+        actualizarCuenta();
+        save();
+        return;
+      }
+    }
+  }
+
   /* ---------------- borrar + deshacer ---------------- */
   var papelera = null, tmr = null;
 
@@ -705,12 +771,12 @@
       var a = loc[id] || null, b = null, rb = rItems[id];
       if (rb && typeof rb === "object"){
         var tt = limpiarTexto(rb.t), ts = sanearNum(rb.ts), pos = sanearNum(rb.pos);
-        if (tt && ts !== null) b = { id: id, t: tt, ts: ts, pos: pos === null ? 0 : pos };
+        if (tt && ts !== null) b = { id: id, t: tt, ts: ts, pos: pos === null ? 0 : pos, c: rb.c ? 1 : 0 };
       }
       var gana = !a ? b : (!b ? a : (b.ts > a.ts ? b : a));
       if (!gana) continue;
       res[id] = gana;
-      if (gana === a && (!b || b.ts < a.ts)) subir["items/" + id] = { t: a.t, ts: a.ts, pos: a.pos };
+      if (gana === a && (!b || b.ts < a.ts)) subir["items/" + id] = { t: a.t, ts: a.ts, pos: a.pos, c: a.c ? 1 : null };
       else if (gana === b) cambioLocal = true;
     }
 
@@ -835,7 +901,7 @@
   /* ---------------- compartir / respaldo ---------------- */
   $("#share").addEventListener("click", function(){
     if (!data.length) return;
-    var txt = data.map(function(it){ return "• " + it.t; }).join("\n");
+    var txt = data.map(function(it){ return (it.c ? "✓ " : "• ") + it.t; }).join("\n");
     if (navigator.share) navigator.share({ title: cfg.titulo, text: cfg.titulo + "\n" + txt })["catch"](function(){});
     else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(function(){ showToast("Copiado"); });
   });
