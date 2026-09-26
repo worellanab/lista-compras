@@ -22,6 +22,12 @@ Arriba hay tres listas que **no se mezclan**, cada una con su propio guardado:
 Funcionan exactamente igual. La app abre en la pestaña donde la dejaste.
 La versión se muestra debajo de las pestañas.
 
+Solo en **Wong** hay además un desplegable de categoría debajo del campo de
+escribir (Verduras, Lácteos, Carnes, Abarrotes, Embutidos, Panadería, Piqueos,
+Otros). La lista de esa pestaña se muestra agrupada por categoría, con un
+encabezado chico por grupo (solo aparecen los grupos que tengan algo). Amazon
+y Misc no tienen categorías: siguen siendo una lista simple.
+
 ## Cómo se usa
 
 | Acción | Gesto |
@@ -117,8 +123,8 @@ así que nadie puede averiguar qué listas existen.
 
 Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
 
-- `<button id="ver">v1.10 &nbsp;aA</button>` en `index.html`
-- `var VERSION = "lista-v1.10"` en `sw.js` — si no, queda el caché viejo
+- `<button id="ver">v1.11 &nbsp;aA</button>` en `index.html`
+- `var VERSION = "lista-v1.11"` en `sw.js` — si no, queda el caché viejo
 
 Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
 las imágenes por nombre y si no, sigue apareciendo el viejo.
