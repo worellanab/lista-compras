@@ -38,13 +38,20 @@ y Misc no tienen categorías: siguen siendo una lista simple.
 | Marcar (ya lo tengo) | Deslizar el producto hacia la izquierda: queda **tachado y apagado**, pero sigue en la lista |
 | Desmarcar | Deslizar hacia la derecha un producto tachado |
 | Borrar | Deslizar hacia la izquierda **otra vez**, ya estando tachado (con "Deshacer" por 5 segundos). **Tocar un producto no hace nada**: un roce accidental no cambia la lista |
-| Ordenar | Dejar presionado un producto (medio segundo, sin mover el dedo) y arrastrarlo arriba o abajo. Al soltar, el orden queda guardado |
+| Ordenar | Dejar presionado un producto (medio segundo) y **arrastrarlo** arriba o abajo. Al soltar, el orden queda guardado |
+| Editar (texto y, en Wong, el grupo) | Dejar presionado un producto (medio segundo) **sin arrastrarlo**: se abre "Editar producto" |
 | Ver la lista completa | Botón "listo" del teclado o deslizar la lista |
 | Compartir / respaldar | Flecha ↑ arriba a la derecha |
-| Ajustes (tamaño y código) | Tocar **v1.10 aA** debajo de las pestañas |
+| Ajustes (tamaño y código) | Tocar **v1.12 aA** debajo de las pestañas |
 
 Si agregas un producto que ya está en la lista, no se duplica: se resalta, sube al
 tope y, si estaba tachado, vuelve a quedar pendiente.
+
+Dejar presionado un producto **sin arrastrarlo** (mismo gesto que ordenar, pero
+soltando antes de mover el dedo) abre una hoja para editarlo: el texto y, solo
+en Wong, el grupo al que pertenece. "Guardar" aplica los cambios, "Borrar" lo
+quita (con el mismo "Deshacer" de siempre) y "Cancelar" o tocar fuera lo cierra
+sin cambiar nada.
 
 El contador de arriba lleva las dos cuentas: lo que falta y lo que ya está tachado.
 
@@ -56,7 +63,7 @@ mayúsculas, para que se vea igual que en la app.
 
 ## Tamaño de la app
 
-Tocar **v1.10 aA** (debajo de las pestañas) abre los ajustes, con un deslizador
+Tocar **v1.12 aA** (debajo de las pestañas) abre los ajustes, con un deslizador
 que agranda o achica **toda** la app: letras, filas, pestañas y botones. Va del
 80 % al 170 %.
 
@@ -123,8 +130,8 @@ así que nadie puede averiguar qué listas existen.
 
 Al cambiar algo, subir el número en **los dos lados** (deben coincidir):
 
-- `<button id="ver">v1.11 &nbsp;aA</button>` en `index.html`
-- `var VERSION = "lista-v1.11"` en `sw.js` — si no, queda el caché viejo
+- `<button id="ver">v1.12 &nbsp;aA</button>` en `index.html`
+- `var VERSION = "lista-v1.12"` en `sw.js` — si no, queda el caché viejo
 
 Si cambias un ícono, **renómbralo** (`icon-cart-…-v2.png`): iOS y GitHub cachean
 las imágenes por nombre y si no, sigue apareciendo el viejo.

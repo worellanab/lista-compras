@@ -196,15 +196,17 @@
     padding:0.25rem 0.125rem;flex:0 0 auto;
   }
 
-  /* ---------- ajustes (se abre tocando la versión) ---------- */
-  #panel{
+  /* ---------- ajustes (se abre tocando la versión) y editar producto
+     (se abre dejando presionado sin arrastrar) comparten el mismo
+     "hoja abajo" ---------- */
+  #panel, #editPanel{
     position:fixed;inset:0;z-index:20;
     background:rgba(0,0,0,.55);
     display:flex;align-items:flex-end;
     opacity:0;pointer-events:none;transition:opacity .2s;
   }
-  #panel.on{opacity:1;pointer-events:auto}
-  #panel .hoja{
+  #panel.on, #editPanel.on{opacity:1;pointer-events:auto}
+  #panel .hoja, #editPanel .hoja{
     width:100%;background:var(--surface);
     border-top-left-radius:18px;border-top-right-radius:18px;
     border-top:1px solid var(--line);
@@ -213,8 +215,8 @@
     /* el panel NO escala: así nunca se vuelve imposible de tocar */
     font-size:16px;
   }
-  #panel.on .hoja{transform:none}
-  #panel .tit{font-size:13px;font-weight:600;color:var(--muted);
+  #panel.on .hoja, #editPanel.on .hoja{transform:none}
+  #panel .tit, #editPanel .tit{font-size:13px;font-weight:600;color:var(--muted);
     letter-spacing:.3px;text-transform:uppercase;margin-bottom:12px}
   #panel .nota{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.4}
   #panel .sep{height:1px;background:var(--line);margin:22px 0 18px}
@@ -242,14 +244,32 @@
     padding:13px 14px;text-align:center;
     -webkit-user-select:all;user-select:all;
   }
-  #panel .btn{
+  #panel .btn, #editPanel .btn{
     -webkit-appearance:none;appearance:none;width:100%;
     border:0;background:var(--surface2);color:var(--text);
     font-family:inherit;font-size:16px;font-weight:600;
     padding:14px;border-radius:12px;margin-top:10px;
   }
-  #panel .btn.primario{background:var(--accent);color:#062B14;margin-top:16px}
-  #panel .btn:active{filter:brightness(.85)}
+  #panel .btn.primario, #editPanel .btn.primario{background:var(--accent);color:#062B14;margin-top:16px}
+  #panel .btn:active, #editPanel .btn:active{filter:brightness(.85)}
+  #editPanel .btn.peligro{color:var(--danger)}
+
+  /* ---------- editar producto ---------- */
+  #editTxt{
+    -webkit-appearance:none;appearance:none;width:100%;
+    background:var(--surface2);border:1px solid transparent;color:var(--text);
+    border-radius:12px;padding:14px;
+    font-family:inherit;font-weight:400;font-size:16px;
+    text-transform:uppercase;letter-spacing:.3px;
+    -webkit-user-select:text;user-select:text;
+  }
+  #editTxt:focus{outline:0;border-color:#2E3B47}
+  #editCat{
+    -webkit-appearance:none;appearance:none;width:100%;
+    background:var(--surface2);border:1px solid transparent;color:var(--text);
+    border-radius:12px;padding:14px;margin-top:10px;
+    font-family:inherit;font-weight:400;font-size:16px;
+  }
 </style>
 <script>
 /* El tamaño guardado se aplica ANTES de dibujar nada, para que la app no
@@ -276,7 +296,7 @@
       <button class="icon-btn" id="share" type="button" title="Compartir">&#8593;</button>
     </div>
     <div class="sub">
-      <button id="ver" type="button">v1.11 &nbsp;aA</button>
+      <button id="ver" type="button">v1.12 &nbsp;aA</button>
       <span id="count"></span>
     </div>
   </header>
@@ -323,6 +343,18 @@
   </div>
 </div>
 
+<div id="editPanel">
+  <div class="hoja">
+    <div class="tit">Editar producto</div>
+    <input id="editTxt" type="text" maxlength="120" autocapitalize="sentences"
+           autocorrect="off" autocomplete="off" spellcheck="false">
+    <select id="editCat" aria-label="Categoría"></select>
+    <button class="btn primario" id="editGuardar" type="button">Guardar</button>
+    <button class="btn peligro" id="editBorrar" type="button">Borrar</button>
+    <button class="btn" id="editCancelar" type="button">Cancelar</button>
+  </div>
+</div>
+
 <div id="toast"><span class="m"></span><button id="undo" type="button">Deshacer</button></div>
 
 <script>
@@ -332,7 +364,8 @@
   var $ = function(s){ return document.querySelector(s); };
   var items = $("#items"), entry = $("#entry"), addBtn = $("#add"),
       countEl = $("#count"), scroller = $("#scroller"), toast = $("#toast"),
-      catRow = $("#catRow"), catSel = $("#catSel");
+      catRow = $("#catRow"), catSel = $("#catSel"),
+      editPanel = $("#editPanel"), editTxt = $("#editTxt"), editCat = $("#editCat");
 
   /* ---------------- datos ----------------
      Todo lo que sale de localStorage se trata como sospechoso: puede venir
@@ -460,6 +493,9 @@
     var o = document.createElement("option");
     o.value = c; o.textContent = c;
     catSel.appendChild(o);
+    var o2 = document.createElement("option");
+    o2.value = c; o2.textContent = c;
+    editCat.appendChild(o2);
   });
 
   var listas = { lista: cargarTab(TABS.lista), pedidos: cargarTab(TABS.pedidos), web: cargarTab(TABS.web) };
@@ -647,7 +683,7 @@
 
   /* ------- tocar cualquier parte = abrir el teclado ------- */
   document.addEventListener("click", function(ev){
-    if (ev.target.closest("button, input, select, .item, #ver, #panel")) return;
+    if (ev.target.closest("button, input, select, .item, #ver, #panel, #editPanel")) return;
     entry.focus();
   });
 
@@ -703,6 +739,7 @@
     if (dragging){
       if (ev.cancelable) ev.preventDefault();     // el dedo mueve el producto, no la lista
       lastY = ev.touches[0].clientY;
+      if (Math.abs(lastY - sy) > 10) dragMoved = true;   // si no, fue solo "dejar presionado"
       moveDrag(lastY);
       return;
     }
@@ -723,7 +760,14 @@
 
   function endSwipe(ev){
     clearTimeout(pressTmr);
-    if (dragging){ endDrag(); return; }
+    if (dragging){
+      /* sin esto, el "click" fantasma que el navegador manda tras soltar
+         cae sobre lo que se acabe de abrir (el panel de editar) y lo
+         vuelve a cerrar al toque, porque "tocar fuera" lo cierra */
+      if (ev.cancelable) ev.preventDefault();
+      endDrag();
+      return;
+    }
     if (!node) return;
     var el = node, dx = 0;
     if (ev.changedTouches && ev.changedTouches[0]) dx = ev.changedTouches[0].clientX - sx;
@@ -743,19 +787,22 @@
     if (lock === "x" && dx < -UMBRAL) marcar(el, 1);        // primero: se tacha
     else if (lock === "x" && dx > UMBRAL) marcar(el, 0);    // a la derecha: se destacha
   }
-  items.addEventListener("touchend", endSwipe, {passive:true});
+  items.addEventListener("touchend", endSwipe, {passive:false});
   items.addEventListener("touchcancel", endSwipe, {passive:true});
 
-  /* ---------------- dejar presionado = ordenar ----------------
+  /* ---------------- dejar presionado = ordenar (o editar) ----------------
      Mantener el dedo quieto sobre un producto lo "levanta"; arrastrando
      hacia arriba o abajo cambia de lugar y al soltar se guarda el orden.
-     Cerca del borde de la pantalla la lista se desplaza sola. */
-  var pressTmr=null, dragging=false, dragRow=null, dragY0=0, lastY=0;
+     Cerca del borde de la pantalla la lista se desplaza sola.
+     Si se suelta SIN haberlo arrastrado, en cambio se abre "Editar producto":
+     así el mismo gesto (dejar presionado) sirve para ordenar o para editar,
+     según si el dedo se mueve o no. */
+  var pressTmr=null, dragging=false, dragRow=null, dragY0=0, lastY=0, dragMoved=false;
 
   function startDrag(el){
     var li = el.parentNode;
     if (!li || !li.classList.contains("row")) return;
-    dragging = true; dragRow = li;
+    dragging = true; dragRow = li; dragMoved = false;
     node = null;                                  // este gesto ya no es swipe
     li.classList.remove("swipe");
     li.classList.add("drag");
@@ -809,6 +856,12 @@
     var li = dragRow; dragRow = null;
     li.classList.remove("drag");
     li.style.transform = "";
+
+    if (!dragMoved){                     // se dejó presionado pero no se arrastró: editar
+      var d = li.querySelector(".item");
+      if (d) abrirEditar(d.dataset.id);
+      return;
+    }
 
     /* el DOM ya quedó en el orden final: se copia a los datos y se guarda */
     var mapa = {}, orden = [], filas = items.querySelectorAll(".item"), i, o;
@@ -1043,6 +1096,50 @@
   function cerrarStream(){
     if (es){ try { es.close(); } catch(e){} es = null; esTab = ""; }
   }
+
+  /* ---------------- editar producto ----------------
+     Se abre dejando presionado un producto sin arrastrarlo (ver endDrag).
+     Deja cambiar el texto y, solo en Wong, la categoría. */
+  var editId = null;
+
+  function abrirEditar(id){
+    var i, it = null;
+    for (i = 0; i < data.length; i++) if (data[i].id === id){ it = data[i]; break; }
+    if (!it) return;
+    editId = id;
+    editTxt.value = it.t;
+    editCat.style.display = activa === "lista" ? "" : "none";
+    if (activa === "lista") editCat.value = sanearCat(it.cat);
+    editPanel.classList.add("on");
+  }
+  function cerrarEditar(){
+    editPanel.classList.remove("on");
+    editId = null;
+  }
+
+  $("#editGuardar").addEventListener("click", function(){
+    if (!editId) return;
+    var i, it = null;
+    for (i = 0; i < data.length; i++) if (data[i].id === editId){ it = data[i]; break; }
+    var t = limpiarTexto(editTxt.value);
+    if (it && t){
+      it.t = t;
+      if (activa === "lista") it.cat = sanearCat(editCat.value);
+      it.ts = Date.now();
+      save(); render();
+    }
+    cerrarEditar();
+  });
+  $("#editBorrar").addEventListener("click", function(){
+    if (!editId) return;
+    var id = editId;
+    cerrarEditar();
+    remove(id);
+  });
+  $("#editCancelar").addEventListener("click", cerrarEditar);
+  editPanel.addEventListener("click", function(ev){   // tocar fuera también cierra, sin guardar
+    if (ev.target === editPanel) cerrarEditar();
+  });
 
   /* ---------------- ajustes: tamaño + código ----------------
      El tamaño es de ESTE teléfono: se guarda aparte y nunca se sincroniza,
